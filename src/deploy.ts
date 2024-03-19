@@ -9,6 +9,7 @@ import {
   fromMAS,
   MAX_GAS_DEPLOYMENT,
   CHAIN_ID,
+  DefaultProviderUrls,
 } from '@massalabs/massa-web3';
 
 // Obtain the current file name and directory paths
@@ -19,7 +20,7 @@ const __dirname = path.dirname(path.dirname(__filename));
 dotenv.config();
 
 // Get environment variables
-const publicApi = getEnvVariable('JSON_RPC_URL_PUBLIC');
+const publicApi = DefaultProviderUrls.BUILDNET;
 const secretKey = getEnvVariable('WALLET_SECRET_KEY');
 // Define deployment parameters
 const chainId = CHAIN_ID.BuildNet; // Choose the chain ID corresponding to the network you want to deploy to
