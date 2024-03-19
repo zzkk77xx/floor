@@ -1,4 +1,4 @@
-import { Args, boolToByte, byteToBool, byteToU8, bytesToString, bytesToU16, bytesToU32, stringToBytes, u16ToBytes, u256ToBytes, u32ToBytes, u8toByte } from '@massalabs/as-types';
+import { Args, boolToByte, byteToBool, byteToU8, bytesToString, bytesToU16, bytesToU256, bytesToU32, stringToBytes, u16ToBytes, u256ToBytes, u32ToBytes, u8toByte } from '@massalabs/as-types';
 import { Address, Context, Storage } from '@massalabs/massa-as-sdk';
 import { BIN_STEP, FLOOR_ID, FLOOR_PER_BIN, PAIR, REBALANCE_PAUSED, ROOF_ID, STATUS, TOKEN_Y, _STATUS_ENTERED, _STATUS_NOT_ENTERED } from '../storage/FloorToken';
 import {BinHelper, IERC20, IFactory, IPair, Math512Bits, PRECISION, SCALE_OFFSET, SafeMath256} from "@dusalabs/core"
@@ -55,7 +55,7 @@ export function constructor(binaryArgs: StaticArray<u8>): void {
     
     // Create the pair contract at `activeId - 1` to make sure no one can add `tokenY` to the floor or above
     const pair = lbFactory.createLBPair((Context.callee()), new Address( tokenY), activeId - 1, binStep, 0);
-    Storage.set(PAIR, stringToBytes(pair().toString()))
+    Storage.set(PAIR, stringToBytes(pair.toString()))
 
     Storage.set(FLOOR_ID, u32ToBytes(activeId))
     setStatus(_STATUS_NOT_ENTERED);
@@ -111,7 +111,17 @@ function floorId(): u32 {
         return pair().getPairInformation().activeId
     }
 
-    
+    function reserves(): Tuple<u256, u256> {
+        const res = pair().getPairInformation();
+        const reserveX = SafeMath256.sub(res.feesX.total, res.feesX.protocol);
+        const reserveY = SafeMath256.sub(res.feesY.total, res.feesY.protocol);
+        return new Tuple(reserveX, reserveY);
+    }
+
+   function protocolFees(): Tuple<u256, u256> {
+        const res = pair().getPairInformation();
+        return new Tuple(res.feesX.protocol, res.feesY.protocol);
+    } 
 
     
 
@@ -157,7 +167,8 @@ function floorId(): u32 {
         const r = range()
         const floorId =r._0
         const roofId = r._1
-        return (amountFloor, amountY,,) = _getAmountsInPair(floorId, pair().getActiveId(), roofId);
+        const res = _getAmountsInPair(floorId, activeId(), roofId);
+        return new Tuple(res.totalFloorInPair, res.totalTokenYInPair)
     }
 
     /**
@@ -166,14 +177,12 @@ function floorId(): u32 {
      * @return The new floor id if the floor was to be rebalanced.
      */
     function calculateNewFloorId(): u32 {
-        (u32 floorId, u32 roofId) = range();
+        const res =
+            _getAmountsInPair(floorId(), activeId(), roofId());
 
-        (uint256 totalFloorInPair, uint256 totalTokenYInPair,, uint256[] memory tokenYReserves) =
-            _getAmountsInPair(floorId, activeId(), roofId);
+        const floorInCirculation =  SafeMath256.sub( totalSupply(), res.totalFloorInPair);
 
-        const floorInCirculation = totalSupply() - totalFloorInPair;
-
-        return _calculateNewFloorId(floorId, activeId(), roofId, floorInCirculation, totalTokenYInPair, tokenYReserves);
+        return _calculateNewFloorId(floorId(), activeId(), roofId(), floorInCirculation, res.totalTokenYInPair,res. reservesY);
     }
 
     /**
@@ -218,8 +227,7 @@ function floorId(): u32 {
     function reduceRoof( nbBins: u32): void {
         Ownable.onlyOwner()
 
-        (u32 floorId, u32 roofId) = range();
-        _reduceRoof(roofId, floorId, nbBins);
+        _reduceRoof(roofId(), floorId(), nbBins);
     }
 
     /**
@@ -245,7 +253,7 @@ function floorId(): u32 {
 
         assert(rebalancePaused(), "FloorToken: rebalance already unpaused");
 
-        assert(roofId() == 0 || pair().getActiveId() <= roofId(), "FloorToken: active bin above roof");
+        assert(roofId() == 0 || activeId() <= roofId(), "FloorToken: active bin above roof");
 
         Storage.set(REBALANCE_PAUSED, boolToByte(false))
 
@@ -353,8 +361,8 @@ function floorId(): u32 {
             if (tokenYNeeded > tokenYAvailable) {
                 // If the amount of tokenY needed is greater than the amount of tokenY available, we need to
                 // keep iterating over the bins
-                tokenYAvailable -= tokenYReserve;
-                floorInCirculation -= Math512Bits.shiftDivRoundDown( tokenYReserve, SCALE_OFFSET, price);
+                tokenYAvailable = SafeMath256.sub(tokenYAvailable, tokenYReserve);
+                floorInCirculation = SafeMath256.sub(floorInCirculation, Math512Bits.shiftDivRoundDown( tokenYReserve, SCALE_OFFSET, price));
             } else {
                 // If the amount of tokenY needed is lower than the amount of tokenY available, we found the
                 // new floor id and we can stop iterating
@@ -375,26 +383,24 @@ function floorId(): u32 {
      * @return Whether the floor was rebalanced or not.
      */
     function _rebalanceFloor(): (bool) {
-        (u32 floorId, u32 roofId) = range();
-
         // If the floor is already at the active bin minus one or above, no rebalance is needed.
         // We do `floorId + 1` because if the `activeId = floorId + 1`, the rebalance is not doable because
         // of the composition fee, so in order to raise the floor, the activeId has to be at least equal
         // or greater than `floorId + 2`
-        if (uint256(floorId) + 1 >= activeId()) return false;
+        if ((floorId()) + 1 >= activeId()) return false;
 
         // Get the amounts of tokens and tokenY that are in the pair contract, as well as the shares and
         // tokenY reserves owned for each bin
-        const r
+        const res
         = _getAmountsInPair(floorId(), activeId(), roofId());
 
         // Calculate the amount of tokens in circulation, which is the total supply minus the tokens that are
         // in the pair().
-        const floorInCirculation = totalSupply() - totalFloorInPair;
+        const floorInCirculation = SafeMath256.sub(totalSupply() , res.totalFloorInPair);
 
         // Calculate the new floor id
         const newFloorId =
-            _calculateNewFloorId(floorId(), activeId(), roofId(), floorInCirculation, totalTokenYInPair, tokenYReserves);
+            _calculateNewFloorId(floorId(), activeId(), roofId(), floorInCirculation, res.totalTokenYInPair, res.reservesY);
 
         // If the new floor id is the same as the current floor id, no rebalance is needed
         if (newFloorId <= floorId()) return false;
@@ -406,11 +412,11 @@ function floorId(): u32 {
         const ids = new Array<u256>(nbBins).fill(u256.Zero);
         let j = 0
         for (let i = 0; i < nbBins;i++) {
-            uint256 amountY = tokenYReserves[i];
+            const amountY = res.reservesY[i];
 
-            if (amountY > 0) {
-                ids[j] = floorId() + i;
-                shares[j] = shares[i];
+            if (amountY > u256.Zero) {
+                ids[j] = u256.from( floorId() + i);
+                res.sharesLeftSide[j] = res.sharesLeftSide[i];
 
                     ++j;
             }
@@ -428,9 +434,10 @@ function floorId(): u32 {
         // }
 
         // Update the floor id
-        _floorId = u32(newFloorId);
+        Storage.set(FLOOR_ID, u32ToBytes(newFloorId)
+        )
 
-        if (j > 0) _safeRebalance(ids, shares, u32(newFloorId));
+        if (j > 0) _safeRebalance(ids, res.sharesLeftSide, u32(newFloorId));
 
         // emit FloorRaised(newFloorId);
 
@@ -452,50 +459,49 @@ function floorId(): u32 {
         nonReentrantBefore()
 
         // Get the previous reserves of the pair contract
-        (uint256 reserveFloorBefore, uint256 reserveTokenYBefore) = pair().getReserves();
+        const resBefore=  reserves();
+        const reserveFloorBefore = resBefore._0;
+        const reserveTokenYBefore = resBefore._1;
 
         // Burns the shares and send the tokenY to the pair as we will add all the tokenY to the new floor bin
-        pair().burn(Context.callee(), (pair()._origin), ids, shares);
+        // pair().burn(Context.callee(), (pair()._origin), ids, shares);
 
         // Get the current tokenY balance of the pair contract (minus the protocol fees)
-        (, uint256 tokenYProtocolFees) = pair().getProtocolFees();
+        const tokenYProtocolFees = protocolFees()._1
         const tokenY = new IERC20(new Address(bytesToString(Storage.get(TOKEN_Y))))
-        const tokenYBalanceSubProtocolFees = tokenY.balanceOf(pair()._origin) - tokenYProtocolFees;
+        const tokenYBalanceSubProtocolFees = SafeMath256.sub( tokenY.balanceOf(pair()._origin) , tokenYProtocolFees);
 
         // Get the new reserves of the pair contract
-        (uint256 reserveFloorAfter, uint256 reserveTokenYAfter) = pair().getReserves();
+        const resAfter = reserves();
 
         // Make sure we don't burn any bins greater or equal to the active bin, as this might send some unexpected
         // tokens to the pair contract
-        assert(reserveFloorAfter == reserveFloorBefore, "FloorToken: token reserve changed");
+        assert(resAfter._1 == reserveFloorBefore, "FloorToken: token reserve changed");
 
         // Calculate the delta amounts to get the ratio
-        const deltaReserveTokenY = reserveTokenYBefore - reserveTokenYAfter;
-        const deltaTokenYBalance = tokenYBalanceSubProtocolFees - reserveTokenYAfter;
+        const deltaReserveTokenY = SafeMath256.sub( resBefore._1 , resAfter._1);
+        const deltaTokenYBalance = SafeMath256.sub(tokenYBalanceSubProtocolFees, resAfter._1);
 
         // Calculate the distrib, which is 1e18 if no tokenY was in the pair contract, and the ratio between the
         // previous tokenY balance and the current one otherwise, rounded up. This is done to make sure that the
         // rebalance doesn't steal any tokenY that was sent to the pair contract by the users. This works because
         // we only add tokenY, so any token that was sent to the pair prior to the rebalance will be sent back
         // to the pair contract after the rebalance. This can't underflow as `deltaTokenYBalance > 0`.
+        const prod = SafeMath256.mul(deltaReserveTokenY, ( PRECISION))
+        const quot = SafeMath256.div(SafeMath256.sub(deltaTokenYBalance, u256.One), deltaTokenYBalance)
         const distrib = deltaTokenYBalance > deltaReserveTokenY
-            ? (deltaReserveTokenY * PRECISION + (deltaTokenYBalance - 1)) / deltaTokenYBalance
-            : PRECISION;
-
-        // Encode the liquidity parameters for the new floor bin
-        const liquidityParameters = new bytes32[](1);
-        liquidityParameters[0] = LiquidityConfigurations.encodeParams(0, uint64(distrib), newFloorId);
+            ? SafeMath256.add(prod, quot)
+            : ( PRECISION);
 
         // Mint the liquidity to the pair contract, any left over will be sent back to the pair contract as
         // this would be user funds (this contains the tokenY or the tokens that were sent to the pair contract
         // prior to the rebalance)
-        (bytes32 amountsReceived, bytes32 amountsLeft,) = pair().mint(address(this), liquidityParameters, address(pair));
+        const r = pair().mint([newFloorId], [u256.Zero],[distrib],  Context.callee(), 0);
+        // TODO: send left over to pair
 
-        const amountsAdded = amountsReceived.sub(amountsLeft);
-        const tokenYAmount = amountsAdded.decodeY();
         assert(
-            tokenYAmount == deltaTokenYBalance * distrib / PRECISION && tokenYAmount >= deltaReserveTokenY
-                && amountsAdded.decodeX() == 0,
+            r.amountYAdded == SafeMath256.div(SafeMath256.mul( deltaTokenYBalance , distrib) , ( PRECISION)) && r.amountYAdded >= deltaReserveTokenY
+                && r.amountXAdded == u256.Zero,
             "FloorToken: broken invariant"
         );
 
@@ -510,69 +516,77 @@ function floorId(): u32 {
      * @param floorId The id of the floor bin.
      * @param nbBins The number of bins to raise the roof by.
      */
-    function _raiseRoof( roofId: u32,  floorId: u32,  nbBins: u32): void  {
+    function _raiseRoof(roofId: u32,  floorId: u32,  nbBins: u32): void  {
         nonReentrantBefore()
 
         assert(nbBins > 0, "FloorToken: zero bins");
-        assert(roofId() == 0 || pair().getActiveId() <= roofId(), "FloorToken: active bin above roof");
+        assert(roofId == 0 || activeId() <= roofId, "FloorToken: active bin above roof");
 
         // Calculate the next id, if the roof wasn't already raised, the next id will be `floorId`
-        const nextId = roofId() == 0 ? floorId : roofId() + 1;
+        const nextId = roofId == 0 ? floorId : roofId + 1;
 
         // Calculate the new roof id
         const newRoofId = nextId + nbBins - 1;
         assert(newRoofId <= U32.MAX_VALUE, "FloorToken: new roof too high");
 
         // Calculate the amount of tokens to mint and the share per bin
-        const sharePerBin = (PRECISION) / nbBins;
-        const floorAmount = floorPerBin * nbBins;
+        const sharePerBin = SafeMath256.div(PRECISION, u256.from( nbBins));
+        const floorPerBin = bytesToU256(Storage.get(FLOOR_PER_BIN));
+        const floorAmount = SafeMath256.mul( floorPerBin , u256.from(nbBins));
 
         // Encode the liquidity parameters for each bin
-        const liquidityParameters = new bytes32[](nbBins);
+        const distributionX = new Array<u256>(nbBins).fill(u256.Zero);
+        const distributionY = new Array<u256>(nbBins).fill(u256.Zero);
+        const ids = new Array<u64>(nbBins).fill(0);
         for (let i = 0; i < nbBins; i++) {
-            liquidityParameters[i] = LiquidityConfigurations.encodeParams(sharePerBin, 0, u32(nextId + i));
-
+            distributionX[i] = sharePerBin
+            distributionY[i] = u256.Zero
+            ids[i] = (nextId + i)
         }
 
         // Get the current reserves of the pair contract
-        (uint256 floorReserve,) = pair().getReserves();
-        (uint256 floorProtocolFees,) = pair().getProtocolFees();
+        const floorReserve = reserves()._0;
+        const floorProtocolFees = protocolFees()._0;
 
         // Calculate the amount of tokens that are owned by the pair contract as liquidity
-        const floorBalanceSubProtocolFees = balanceOf(address(pair)) - floorProtocolFees;
+        const pairAddress = pair()._origin;
+        const floorBalanceSubProtocolFees = SafeMath256.sub( balanceOf(pairAddress) , floorProtocolFees);
 
         // Calculate the amount of tokens that were sent to the pair contract waiting to be added as liquidity or
         // swapped for tokenY.
-        const previousBalance = floorBalanceSubProtocolFees - floorReserve;
+        const previousBalance = SafeMath256.sub(floorBalanceSubProtocolFees , floorReserve);
 
         // Mint or burn the tokens to make sure that the amount of tokens that will be added as liquidity is
         // exactly `floorAmount`.
-        unchecked {
-            if (previousBalance > floorAmount) _burn(address(pair), previousBalance - floorAmount);
-            else if (floorAmount > previousBalance) _mint(address(pair), floorAmount - previousBalance);
-        }
+        // unsafe math is fine
+
+            if (previousBalance > floorAmount) _burn(pairAddress, u256.sub( previousBalance ,floorAmount));
+            else if (floorAmount > previousBalance) _mint(pairAddress, u256.sub( floorAmount , previousBalance));
+        
 
         // Mint the tokens to the pair contract and mint the liquidity
-        (bytes32 amountsReceived, bytes32 amountsLeft,) = pair().mint(address(this), liquidityParameters, address(pair));
+        const mintRes = pair().mint(ids, distributionX, distributionY, Context.callee(), 0);
+        const amountsLeftX = u256.Zero; // TODO:
 
         // Make sure that no tokens Y were added as liquidity as this would mean stealing user funds.
-        assert(amountsReceived.sub(amountsLeft).decodeY() == 0, "FloorToken: invalid amounts");
+        assert(mintRes.amountYAdded == u256.Zero, "FloorToken: invalid amounts");
 
         // Make sure that the amount of tokens X that were added as liquidity is exactly `tokenAmount`
-        const floorInExcess;
-        if (amountsLeft.decodeX() > 0) {
-            (uint256 floorReserveAfter,) = pair().getReserves();
-            (uint256 floorProtocolFeesAfter,) = pair().getProtocolFees();
+        let floorInExcess = u256.Zero;
+        if (amountsLeftX > u256.Zero) {
+            const  floorReserveAfter = reserves()._0;
+            const floorProtocolFeesAfter = protocolFees()._0;
 
             // Calculate the amount of tokens that are left from the deposit
-            floorInExcess = balanceOf(address(pair)) - (floorReserveAfter + floorProtocolFeesAfter);
+            floorInExcess = SafeMath256.sub( balanceOf(pairAddress) , SafeMath256.add(floorReserveAfter , floorProtocolFeesAfter));
         }
 
         // Mint or burn the token to make sure that the amount of token in excess is exactly `previousBalance`
-        unchecked {
-            if (floorInExcess > previousBalance) _burn(address(pair), floorInExcess - previousBalance);
-            else if (previousBalance > floorInExcess) _mint(address(pair), previousBalance - floorInExcess);
-        }
+        // unsafe math is fine
+        
+            if (floorInExcess > previousBalance) _burn(pairAddress, u256.sub( floorInExcess, previousBalance));
+            else if (previousBalance > floorInExcess) _mint(pairAddress, u256.sub(previousBalance , floorInExcess));
+        
 
         // Update the roof id
         setRoofId(newRoofId)
@@ -594,40 +608,40 @@ function floorId(): u32 {
         assert(nbBins > 0, "FloorToken: zero bins");
         assert(roofId > nbBins, "FloorToken: roof too low");
 
-        const activeId = pair().getActiveId();
         const newRoofId = roofId - nbBins;
 
-        assert(newRoofId > activeId, "FloorToken: new roof not above active bin");
+        assert(newRoofId > activeId(), "FloorToken: new roof not above active bin");
         assert(newRoofId >= floorId, "FloorToken: new roof below floor bin");
 
         // Calculate the ids of the bins to remove
         const  ids = new Array<u256>(nbBins).fill(u256.Zero);
         const  shares = new Array<u256>(nbBins).fill(u256.Zero);
         for (let i = 0; i < nbBins;i++) {
-            const id = roofId - i;
+            const id = (roofId - i);
 
-            ids[i] = id;
+            ids[i] = u256.from(id);
             shares[i] = pair().balanceOf(Context.callee(), id);
 
         }
-
+ 
         // Get the actual balance of floor that was transferred to the pair contract
-        (uint256 floorReserve, uint256 tokenYReserve) = pair().getReserves();
-        (uint256 floorProtocolFees, uint256 tokenYProtocolFees) = pair().getProtocolFees();
+        const currentReserves = reserves()
+        const currentFees = protocolFees()
 
         const floorBalance = balanceOf((pair()._origin));
 
-        const floorExcess = floorBalance - (floorReserve + floorProtocolFees);
+        const floorExcess = SafeMath256.sub( floorBalance, SafeMath256.add (currentReserves._0, currentFees._0));
 
         // Burn the shares and send the tokenY to the pair
-        pair().burn(Context.callee(), (pair()._origin), ids, shares);
+        // pair().burn(Context.callee(), (pair()._origin), ids, shares);
+        // TODO:
 
         // Get the current tokenY balance of the pair contract (minus the protocol fees)
-        (uint256 newFloorReserve, uint256 newTokenYReserve) = pair().getReserves();
-        (uint256 newFloorProtocolFees, uint256 newTokenYProtocolFees) = pair().getProtocolFees();
+        const newReserves = reserves()
+        const newFees = protocolFees()
 
         assert(
-            newTokenYReserve == tokenYReserve && newTokenYProtocolFees == tokenYProtocolFees,
+            newReserves._1 == currentReserves._1 && newFees._1 == currentFees._1,
             "FloorToken: tokenY reserve changed"
         );
 
@@ -635,10 +649,10 @@ function floorId(): u32 {
 
         assert(newFloorBalance == floorBalance, "FloorToken: floor balance changed");
 
-        const newFloorExcess = newFloorBalance - (newFloorReserve + newFloorProtocolFees);
+        const newFloorExcess = SafeMath256.sub(newFloorBalance, SafeMath256.add(newReserves._0, newFees._0));
 
         // Burn the tokens that were removed from the pair contract
-        if (newFloorExcess > floorExcess) _burn((pair()._origin), newFloorExcess - floorExcess);
+        if (newFloorExcess > floorExcess) _burn((pair()._origin), SafeMath256.sub( newFloorExcess, floorExcess));
 
         // Update the roof id
         setRoofId(newRoofId)
@@ -661,8 +675,7 @@ function floorId(): u32 {
         // If the token is being transferred from the pair contract, it can't be rebalanced as the
         // reentrancy guard will prevent it. Also prevent the active bin to be above the roof bin.
         if (from == (pair()._origin)) {
-            const activeId = pair().getActiveId();
-            assert(activeId <= roofId(), "FloorToken: active bin above roof");
+            assert(activeId() <= roofId(), "FloorToken: active bin above roof");
 
             return;
         }
@@ -690,5 +703,26 @@ function floorId(): u32 {
      * @return The total supply of the token.
      */
     function totalSupply(): u256 {
+        throw new Error("must be implemented by child");
+    }
+
+
+    /**
+     * @dev Mint tokens to an account.
+     * This function needs to be overriden by the child contract and should not trigger any callback for safety.
+     * @param account The address of the account to mint tokens to.
+     * @param amount The amount of tokens to mint.
+     */
+    function _mint( account: Address, amount: u256): void {
+        throw new Error("must be implemented by child");
+    }
+
+    /**
+     * @dev Burn tokens from an account.
+     * This function needs to be overriden by the child contract and should not trigger any callback for safety.
+     * @param account The address of the account to burn tokens from.
+     * @param amount The amount of tokens to burn.
+     */
+    function _burn( account: Address, amount: u256): void {
         throw new Error("must be implemented by child");
     }
