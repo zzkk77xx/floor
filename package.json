@@ -33,7 +33,7 @@
         "@massalabs/sc-standards": "^0.1.1",
         "@protobuf-ts/plugin": "^2.9.1",
         "@types/node": "^18.11.10",
-        "as-bignum": "^0.2.40",
+        "as-bignum": "github:massalabs/as-bignum#0105eb596b2fa707c00712e811a2efdfcb8a9848",
         "assemblyscript": "^0.27.2",
         "assemblyscript-prettier": "^1.0.7",
         "dotenv": "^16.0.3",
