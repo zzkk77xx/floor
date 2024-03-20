@@ -1,9 +1,8 @@
 export * from './FloorToken';
 export * from './TransferTaxToken';
 
-import { generateEvent } from '@massalabs/massa-as-sdk';
 import * as FT from './FloorToken';
-import * as TTT from './TransferTaxToken';
+import * as TTT from './TransferTaxToken-external';
 import { ERC20 } from '@dusalabs/core/';
 import { Args } from '@massalabs/as-types';
 // import * as ERC20 from '@massalabs/sc-standards/assembly/contracts/FT/token';

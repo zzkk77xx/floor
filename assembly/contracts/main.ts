@@ -10,6 +10,7 @@ import {
   ID_ONE,
   IERC20,
   IFactory,
+  IRouter,
   ONE_COIN,
   _sortTokens,
 } from '@dusalabs/core';
@@ -21,9 +22,11 @@ export function constructor(bs: StaticArray<u8>): void {
 }
 
 export function main(bs: StaticArray<u8>): void {
+  const router = new IRouter(
+    new Address('AS1qCXCY5AF7SpZUk2bwiHneYb5MLVgeWEiRs8BxorYArLWMavZ'),
+  );
   const floorWasm: StaticArray<u8> = fileToByteArray('build/MyFloorToken.wasm');
   const floorToken = new IMyFloorToken(createSC(floorWasm));
-  generateEvent(floorToken._origin.toString());
   transferCoins(floorToken._origin, 5 * ONE_COIN);
 
   const tokenY = new IERC20(
@@ -52,8 +55,7 @@ export function main(bs: StaticArray<u8>): void {
     'MyFloorToken',
     'MFT',
   );
-  generateEvent(floorToken.transferTax.balanceOf(Context.caller()).toString());
-  generateEvent(floorToken.transferTax.taxRate().toString());
 
-  assert(false, 'This is a test assertion. It should never be reached.');
+  generateEvent(floorToken._origin.toString());
+  // assert(false, 'This is a test assertion. It should never be reached.');
 }
