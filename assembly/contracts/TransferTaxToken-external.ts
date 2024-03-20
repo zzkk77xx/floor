@@ -50,9 +50,6 @@ export function constructor(bs: StaticArray<u8>): void {
   ERC20.constructor(
     new Args().add(name).add(symbol).add(decimals).add(supply).serialize(),
   );
-
-  const owner = args.nextString().expect('owner is missing or invalid');
-  Ownable._setOwner(owner);
 }
 
 /**
