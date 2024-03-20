@@ -3,7 +3,9 @@
         "debug": {
             "sourceMap": true,
             "debug": true,
-            "transform": ["@massalabs/as-transformer"]
+            "transform": [
+                "@massalabs/as-transformer"
+            ]
         },
         "release": {
             "sourceMap": true,
@@ -11,11 +13,16 @@
             "shrinkLevel": 0,
             "converge": false,
             "noAssert": false,
-            "transform": ["@massalabs/as-transformer"]
+            "transform": [
+                "@massalabs/as-transformer"
+            ]
         }
     },
     "options": {
         "exportRuntime": true,
-        "bindings": "esm"
+        "bindings": "esm",
+        "transform": [
+            "@massalabs/as-transformer"
+        ]
     }
 }

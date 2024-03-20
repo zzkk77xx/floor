@@ -38,10 +38,20 @@ import {
 } from '@dusalabs/core';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import * as Ownable from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
-
-class Tuple<T, U> {
-  constructor(public readonly _0: T, public readonly _1: U) {}
-}
+import {
+  _getAmountsInPair,
+  _tokensInPair,
+  activeId,
+  binStep,
+  floorId,
+  pair,
+  protocolFees,
+  range,
+  rebalancePaused,
+  reserves,
+  roofId,
+  status,
+} from './FloorToken-internal';
 
 export * from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 
@@ -62,17 +72,17 @@ export * from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 /**
  * @notice Constructor that initializes the contracts' parameters.
  * @dev The constructor will also deploy a new LB pair contract.
- * @param tokenY_ The address of the token that will be paired with the floor token.
- * @param lbFactory_ The address of the LB factory, only work with v2.1.
- * @param activeId_ The id of the active bin, this is the price floor, calculated as:
+ * @param tokenY The address of the token that will be paired with the floor token.
+ * @param lbFactory The address of the LB factory, only work with v2.1.
+ * @param activeId The id of the active bin, this is the price floor, calculated as:
  * `(1 + binStep / 10000) ^ (activeId - 2^23)`
- * @param binStep_ The step between each bin, in basis points.
- * @param floorPerBin_ The amount of floor token that will be minted to the pair contract for each bin.
+ * @param binStep The step between each bin, in basis points.
+ * @param floorPerBin The amount of floor token that will be minted to the pair contract for each bin.
  */
-export function constructor(binaryArgs: StaticArray<u8>): void {
+export function constructor(bs: StaticArray<u8>): void {
   assert(Context.isDeployingContract(), 'already initialized');
 
-  const args = new Args(binaryArgs);
+  const args = new Args(bs);
 
   const tokenY = args.nextString().expect('tokenY is missing or invalid');
   const lbFactory = new IFactory(
@@ -112,63 +122,12 @@ function setRoofId(roofId: u32): void {
   Storage.set(ROOF_ID, u32ToBytes(roofId));
 }
 
-// GETTERS
-
-function pair(): IPair {
-  return new IPair(new Address(Storage.get(bytesToString(PAIR))));
-}
-
-function status(): u8 {
-  return byteToU8(Storage.get(STATUS));
-}
-
-function binStep(): u16 {
-  return bytesToU16(Storage.get(BIN_STEP));
-}
-
-function floorId(): u32 {
-  return bytesToU32(Storage.get(FLOOR_ID));
-}
-
-function roofId(): u32 {
-  return bytesToU32(Storage.get(ROOF_ID));
-}
-
-function rebalancePaused(): bool {
-  return byteToBool(Storage.get(REBALANCE_PAUSED));
-}
-
-/**
- * @notice Returns the range of the position, the floor and the roof bin ids.
- * @return The floor bin id.
- * @return The roof bin id.
- */
-function range(): Tuple<u32, u32> {
-  return new Tuple(floorId(), roofId());
-}
-
-function activeId(): u32 {
-  return pair().getPairInformation().activeId;
-}
-
-function reserves(): Tuple<u256, u256> {
-  const res = pair().getPairInformation();
-  const reserveX = SafeMath256.sub(res.feesX.total, res.feesX.protocol);
-  const reserveY = SafeMath256.sub(res.feesY.total, res.feesY.protocol);
-  return new Tuple(reserveX, reserveY);
-}
-
-function protocolFees(): Tuple<u256, u256> {
-  const res = pair().getPairInformation();
-  return new Tuple(res.feesX.protocol, res.feesY.protocol);
-}
-
 // MODIFIERS
 
 /**
  * @notice Modifier to make sure that the function is not reentrant.
  */
-function nonReentrantBefore() {
+function nonReentrantBefore(): void {
   assert(status() == _STATUS_NOT_ENTERED, 'FloorToken: reentrant call');
   setStatus(_STATUS_ENTERED);
 }
@@ -176,7 +135,7 @@ function nonReentrantBefore() {
 /**
  * @notice Modifier to make sure that the function is not reentrant.
  */
-function nonReentrantAfter() {
+function nonReentrantAfter(): void {
   setStatus(_STATUS_NOT_ENTERED);
 }
 
@@ -197,12 +156,9 @@ function floorPrice(): u256 {
  * @return amountFloor The amount of floor token that are paired in the pair contract as locked liquidity.
  * @return amountY The amount of tokenY that are paired in the pair contract as locked liquidity.
  */
-function tokensInPair(): Tuple<u256, u256> {
-  const r = range();
-  const floorId = r._0;
-  const roofId = r._1;
-  const res = _getAmountsInPair(floorId, activeId(), roofId);
-  return new Tuple(res.totalFloorInPair, res.totalTokenYInPair);
+export function tokensInPair(_: StaticArray<u8>): StaticArray<u8> {
+  const res = _tokensInPair();
+  return new Args().add(res._0).add(res._1).serialize();
 }
 
 /**
@@ -304,88 +260,6 @@ function unpauseRebalance(): void {
   Storage.set(REBALANCE_PAUSED, boolToByte(false));
 
   // emit RebalanceUnpaused();
-}
-
-class GetAmountsInPairResult {
-  constructor(
-    public readonly totalFloorInPair: u256,
-    public readonly totalTokenYInPair: u256,
-    public readonly sharesLeftSide: u256[],
-    public readonly reservesY: u256[],
-  ) {}
-}
-
-/**
- * @dev Returns the amount of token and tokenY that are in the pair contract.
- * @param floorId The id of the floor bin.
- * @param activeId The id of the active bin.
- * @param roofId The id of the roof bin.
- * @return totalFloorInPair The amount of tokens that are owned by this contract as liquidity.
- * @return totalTokenYInPair The amount of tokenY that are owned by this contract as liquidity.
- * @return sharesLeftSide The amount of shares owned by this contract as liquidity from floor to active bin.
- * @return reservesY The amount of tokenY owned by this contract as liquidity.
- */
-function _getAmountsInPair(
-  floorId: u32,
-  activeId: u32,
-  roofId: u32,
-): GetAmountsInPairResult {
-  let totalFloorInPair = u256.Zero;
-  let totalTokenYInPair = u256.Zero;
-
-  // Calculate the total number of bins and the number of bins on the left side (from floor to active bin).
-  const nbBins = roofId - floorId + 1;
-  const nbBinsLeftSide = floorId > activeId ? 0 : activeId - floorId + 1;
-
-  const sharesLeftSide = new Array<u256>(nbBinsLeftSide).fill(u256.Zero);
-  const reservesY = new Array<u256>(nbBins).fill(u256.Zero);
-
-  for (let i = 0; i < nbBins; i++) {
-    const id = floorId + i;
-
-    // Get the amount of shares owned by this contract, the reserves and the total supply of each bin
-    const share = pair().balanceOf(Context.callee(), id);
-    const binReserves = pair().getBin(id);
-    const totalShares = pair().totalSupply(id);
-
-    // The check for totalShares is implicit, as `totalShares >= share`
-    if (share > u256.Zero) {
-      // Calculate the amounts of tokens owned by this contract and that were added as liquidity
-      const reserveX =
-        binReserves.reserveX > u256.Zero
-          ? Math512Bits.mulDivRoundDown(
-              share,
-              binReserves.reserveX,
-              totalShares,
-            )
-          : u256.Zero;
-      const reserveY =
-        binReserves.reserveY > u256.Zero
-          ? Math512Bits.mulDivRoundDown(
-              share,
-              binReserves.reserveY,
-              totalShares,
-            )
-          : u256.Zero;
-
-      // Update the total amounts
-      totalFloorInPair = SafeMath256.add(totalFloorInPair, reserveX);
-      totalTokenYInPair = SafeMath256.add(totalTokenYInPair, reserveY);
-
-      // Update the arrays for the left side
-      if (id <= activeId) {
-        sharesLeftSide[i] = share;
-        reservesY[i] = reserveY;
-      }
-    }
-  }
-
-  return new GetAmountsInPairResult(
-    totalFloorInPair,
-    totalTokenYInPair,
-    sharesLeftSide,
-    reservesY,
-  );
 }
 
 /**
@@ -817,7 +691,7 @@ function _beforeTokenTransfer(from: Address, to: Address, amount: u256): void {
  * @param account The account to get the balance of.
  * @return The amount of tokens owned by `account`.
  */
-function balanceOf(account: Address): u256 {
+export function balanceOf(account: Address): u256 {
   throw new Error('must be implemented by child');
 }
 
@@ -826,7 +700,7 @@ function balanceOf(account: Address): u256 {
  * @dev This function needs to be overriden by the child contract.
  * @return The total supply of the token.
  */
-function totalSupply(): u256 {
+export function totalSupply(): u256 {
   throw new Error('must be implemented by child');
 }
 
@@ -836,7 +710,7 @@ function totalSupply(): u256 {
  * @param account The address of the account to mint tokens to.
  * @param amount The amount of tokens to mint.
  */
-function _mint(account: Address, amount: u256): void {
+export function _mint(account: Address, amount: u256): void {
   throw new Error('must be implemented by child');
 }
 
@@ -846,6 +720,6 @@ function _mint(account: Address, amount: u256): void {
  * @param account The address of the account to burn tokens from.
  * @param amount The amount of tokens to burn.
  */
-function _burn(account: Address, amount: u256): void {
+export function _burn(account: Address, amount: u256): void {
   throw new Error('must be implemented by child');
 }

@@ -28,7 +28,6 @@ const maxGas = MAX_GAS_DEPLOYMENT; // Gas for deployment Default is the maximum 
 const fees = 0n; // Fees to be paid for deployment. Default is 0
 const waitFirstEvent = true;
 
-// Create an account using the private keyc
 const deployerAccount = await WalletClient.getAccountFromSecretKey(secretKey);
 
 /**
@@ -36,9 +35,6 @@ const deployerAccount = await WalletClient.getAccountFromSecretKey(secretKey);
  *
  * @remarks
  * Multiple smart contracts can be deployed by adding more objects to the array.
- * In this example one contract located at 'build/main.wasm' is deployed with
- * 0.1 MASSA and an argument 'Test'.
- *
  * After all deployments, it terminates the process.
  */
 (async () => {
@@ -48,9 +44,8 @@ const deployerAccount = await WalletClient.getAccountFromSecretKey(secretKey);
     [
       {
         data: readFileSync(path.join(__dirname, 'build', 'main.wasm')), // smart contract bytecode
-        coins: fromMAS(0.1), // coins for deployment
-        args: new Args().addString('Test'), // arguments for deployment
-      } as ISCData,
+        coins: fromMAS(50), // coins for deployment
+      },
       // Additional smart contracts can be added here for deployment
     ],
     chainId,

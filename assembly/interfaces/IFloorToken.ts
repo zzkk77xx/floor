@@ -1,5 +1,6 @@
-import { IERC20, IPair } from '@dusalabs/core';
+import { IERC20, IFactory, IPair } from '@dusalabs/core';
 import {
+  Args,
   NoArg,
   byteToBool,
   bytesToString,
@@ -47,10 +48,6 @@ export class IFloorToken {
   //  tokensInPair(): (uint256, uint256);
 
   //  calculateNewFloorId(): (uint24);
-
-  //  balanceOf(address account): u256 {}
-
-  //  totalSupply(): u256 {}
 
   //  rebalanceFloor() external;
 

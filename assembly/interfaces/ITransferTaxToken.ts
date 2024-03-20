@@ -1,18 +1,18 @@
+import { IERC20 } from '@dusalabs/core';
 import { Args, NoArg, bytesToString, bytesToU256 } from '@massalabs/as-types';
-import { Address, call } from '@massalabs/massa-as-sdk';
+import { Address, Storage, call } from '@massalabs/massa-as-sdk';
 import { u256 } from 'as-bignum/assembly/integer/u256';
+import { TAX_RATE, TAX_RECIPIENT } from '../storage/TransferTaxToken';
 
-export class ITransferTaxToken {
-  constructor(public _origin: Address) {}
-
+export class ITransferTaxToken extends IERC20 {
   taxRecipient(): Address {
     return new Address(
-      bytesToString(call(this._origin, 'taxRecipient', NoArg, 0)),
+      bytesToString(Storage.getOf(this._origin, TAX_RECIPIENT)),
     );
   }
 
   taxRate(): u256 {
-    return bytesToU256(call(this._origin, 'taxRate', NoArg, 0));
+    return bytesToU256(Storage.getOf(this._origin, TAX_RATE));
   }
 
   excludedFromTax(account: Address): u256 {
