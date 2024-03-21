@@ -6,9 +6,11 @@ import {
   bytesToString,
   bytesToU16,
   bytesToU256,
+  bytesToU32,
 } from '@massalabs/as-types';
 import { Address, call } from '@massalabs/massa-as-sdk';
 import { u256 } from 'as-bignum/assembly/integer/u256';
+import { Tuple } from '../libraries/Utils';
 
 export class IFloorToken {
   constructor(public _origin: Address) {}
@@ -45,17 +47,36 @@ export class IFloorToken {
     return byteToBool(res);
   }
 
-  //  tokensInPair(): (uint256, uint256);
+  tokensInPair(): Tuple<u256, u256> {
+    const res = new Args(call(this._origin, 'tokensInPair', NoArg, 0));
+    return new Tuple<u256, u256>(
+      res.nextU256().unwrap(),
+      res.nextU256().unwrap(),
+    );
+  }
 
-  //  calculateNewFloorId(): (uint24);
+  calculateNewFloorId(): u32 {
+    const res = call(this._origin, 'calculateNewFloorId', NoArg, 0);
+    return bytesToU32(res);
+  }
 
-  //  rebalanceFloor() external;
+  rebalanceFloor(): void {
+    call(this._origin, 'rebalanceFloor', NoArg, 0);
+  }
 
-  //  raiseRoof(uint24 nbBins) external;
+  raiseRoof(nbBins: u32): void {
+    call(this._origin, 'raiseRoof', new Args().add(nbBins), 0);
+  }
 
-  //  reduceRoof(uint24 nbBins) external;
+  reduceRoof(nbBins: u32): void {
+    call(this._origin, 'reduceRoof', new Args().add(nbBins), 0);
+  }
 
-  //  pauseRebalance() external;
+  pauseRebalance(): void {
+    call(this._origin, 'pauseRebalance', NoArg, 0);
+  }
 
-  //  unpauseRebalance() external;
+  unpauseRebalance(): void {
+    call(this._origin, 'unpauseRebalance', NoArg, 0);
+  }
 }

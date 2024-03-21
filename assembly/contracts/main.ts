@@ -1,6 +1,7 @@
 import {
   Address,
   Context,
+  balanceOf,
   createSC,
   fileToByteArray,
   generateEvent,
@@ -55,6 +56,8 @@ export function main(bs: StaticArray<u8>): void {
     'MyFloorToken',
     'MFT',
   );
+
+  floorToken.floor.raiseRoof(3);
 
   generateEvent(floorToken._origin.toString());
   // assert(false, 'This is a test assertion. It should never be reached.');

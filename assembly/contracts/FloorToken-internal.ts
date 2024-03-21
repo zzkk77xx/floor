@@ -41,12 +41,9 @@ import {
   FLOOR_PER_BIN,
 } from '../storage/FloorToken';
 import { IFloorToken } from '../interfaces/IFloorToken';
+import { Tuple } from '../libraries/Utils';
 
 // CLASSES
-
-class Tuple<T, U> {
-  constructor(public readonly _0: T, public readonly _1: U) {}
-}
 
 class GetAmountsInPairResult {
   constructor(
@@ -192,7 +189,7 @@ export function _tokensInPair(): Tuple<u256, u256> {
  * @param newFloorId The new floor id.
  */
 export function _safeRebalance(
-  ids: u256[],
+  ids: u64[],
   shares: u256[],
   newFloorId: u32,
 ): void {
@@ -204,7 +201,7 @@ export function _safeRebalance(
   const reserveTokenYBefore = resBefore._1;
 
   // Burns the shares and send the tokenY to the pair as we will add all the tokenY to the new floor bin
-  // pair().burn(Context.callee(), (pair()._origin), ids, shares);
+  pair().burn(ids, shares, pair()._origin, 0);
 
   // Get the current tokenY balance of the pair contract (minus the protocol fees)
   const tokenYProtocolFees = protocolFees()._1;
@@ -399,12 +396,12 @@ function _reduceRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   assert(newRoofId >= floorId, 'FloorToken: new roof below floor bin');
 
   // Calculate the ids of the bins to remove
-  const ids = new Array<u256>(nbBins).fill(u256.Zero);
+  const ids = new Array<u64>(nbBins).fill(0);
   const shares = new Array<u256>(nbBins).fill(u256.Zero);
   for (let i: u32 = 0; i < nbBins; i++) {
     const id = roofId - i;
 
-    ids[i] = u256.from(id);
+    ids[i] = id;
     shares[i] = pair().balanceOf(Context.callee(), id);
   }
 
@@ -420,8 +417,7 @@ function _reduceRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   );
 
   // Burn the shares and send the tokenY to the pair
-  // pair().burn(Context.callee(), (pair()._origin), ids, shares);
-  // TODO:
+  pair().burn(ids, shares, pair()._origin, 0);
 
   // Get the current tokenY balance of the pair contract (minus the protocol fees)
   const newReserves = reserves();
@@ -495,13 +491,13 @@ export function _rebalanceFloor(): bool {
   const nbBins = newFloorId - floorId();
 
   // Get the ids of the bins to remove
-  const ids = new Array<u256>(nbBins).fill(u256.Zero);
+  const ids = new Array<u64>(nbBins).fill(0);
   let j = 0;
   for (let i: u32 = 0; i < nbBins; i++) {
     const amountY = res.reservesY[i];
 
     if (amountY > u256.Zero) {
-      ids[j] = u256.from(floorId() + i);
+      ids[j] = floorId() + i;
       res.sharesLeftSide[j] = res.sharesLeftSide[i];
 
       ++j;
@@ -512,11 +508,9 @@ export function _rebalanceFloor(): bool {
   // checked that the new floor id is greater than the current floor id, so we know that the length of the shares
   // array is greater than the number of bins to remove, so this is safe to do
 
-  // TODO:
-  // assembly {
-  //     mstore(ids, j)
-  //     mstore(shares, j)
-  // }
+  // not sure if this is needed
+  // ids = ids.slice(0, j);
+  // res.sharesLeftSide = res.sharesLeftSide.slice(0, j);
 
   // Update the floor id
   Storage.set(FLOOR_ID, u32ToBytes(newFloorId));
