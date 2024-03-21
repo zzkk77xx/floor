@@ -305,7 +305,7 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   const distributionX = new Array<u256>(nbBins).fill(u256.Zero);
   const distributionY = new Array<u256>(nbBins).fill(u256.Zero);
   const ids = new Array<u64>(nbBins).fill(0);
-  for (let i = 0; i < nbBins; i++) {
+  for (let i: u32 = 0; i < nbBins; i++) {
     distributionX[i] = sharePerBin;
     distributionY[i] = u256.Zero;
     ids[i] = nextId + i;
@@ -401,7 +401,7 @@ function _reduceRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   // Calculate the ids of the bins to remove
   const ids = new Array<u256>(nbBins).fill(u256.Zero);
   const shares = new Array<u256>(nbBins).fill(u256.Zero);
-  for (let i = 0; i < nbBins; i++) {
+  for (let i: u32 = 0; i < nbBins; i++) {
     const id = roofId - i;
 
     ids[i] = u256.from(id);
@@ -497,7 +497,7 @@ export function _rebalanceFloor(): bool {
   // Get the ids of the bins to remove
   const ids = new Array<u256>(nbBins).fill(u256.Zero);
   let j = 0;
-  for (let i = 0; i < nbBins; i++) {
+  for (let i: u32 = 0; i < nbBins; i++) {
     const amountY = res.reservesY[i];
 
     if (amountY > u256.Zero) {

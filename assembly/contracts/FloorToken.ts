@@ -231,12 +231,21 @@ export function unpauseRebalance(_: StaticArray<u8>): void {
  * @dev Overrides the `_beforeTokenTransfer` function to rebalance the floor if needed and when possible.
  * @param from The address of the sender.
  * @param to The address of the recipient.
+ * @param amount The amount of tokens to transfer.
  */
-export function _beforeTokenTransfer(
-  from: Address,
-  to: Address,
-  amount: u256,
-): void {
+export function _beforeTokenTransfer(bs: StaticArray<u8>): void {
+  assert(
+    Context.caller().equals(Context.callee()),
+    'only this contract can call this function',
+  );
+
+  const args = new Args(bs);
+  const from = new Address(
+    args.nextString().expect('from is missing or invalid'),
+  );
+  const to = new Address(args.nextString().expect('to is missing or invalid'));
+  const amount = args.nextU256().expect('amount is missing or invalid');
+
   if (from == new Address('0') || to == new Address('0')) return;
 
   if (rebalancePaused()) return;
