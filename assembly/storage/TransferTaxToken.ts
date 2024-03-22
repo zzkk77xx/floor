@@ -15,12 +15,12 @@ export const _EXCLUDED_BOTH: u256 = u256.or(_EXCLUDED_FROM, _EXCLUDED_TO); // 0b
 /**
  * @dev The recipient and rate of the transfer tax.
  */
-export const TAX_RECIPIENT = stringToBytes('taxRecipient');
-export const TAX_RATE = stringToBytes('taxRate');
+export const TAX_RECIPIENT = stringToBytes('TAX_RECIPIENT');
+export const TAX_RATE = stringToBytes('TAX_RATE');
 
 /**
  * @dev The exclusion status of accounts from transfer tax.
  */
 export const EXCLUDED_FROM_TAX = new PersistentMap<string, u256>(
-  'excludedFromTax',
+  'EXCLUDED_FROM_TAX',
 );

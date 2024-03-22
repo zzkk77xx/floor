@@ -19,11 +19,13 @@ import {
   _EXCLUDED_BOTH,
   _EXCLUDED_FROM,
   _EXCLUDED_TO,
+  _EXCLUDED_NONE,
 } from '../../storage/TransferTaxToken';
 import { _burn } from '@massalabs/sc-standards/assembly/contracts/FT/burnable/burn-internal';
 import { super_transfer } from '../ERC20/token-internal';
 
 export function _excludedFromTax(account: Address): u256 {
+  if (!EXCLUDED_FROM_TAX.contains(account.toString())) return _EXCLUDED_NONE;
   return EXCLUDED_FROM_TAX.getSome(account.toString());
 }
 

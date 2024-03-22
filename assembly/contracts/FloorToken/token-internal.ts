@@ -3,6 +3,7 @@ import {
   IERC20,
   IPair,
   Math512Bits,
+  ONE_COIN,
   PRECISION,
   SCALE_OFFSET,
   SafeMath256,
@@ -251,7 +252,7 @@ export function _safeRebalance(
     [u256.Zero],
     [distrib],
     Context.callee(),
-    0,
+    ONE_COIN,
   );
   // TODO: send left over to pair
 
@@ -339,7 +340,7 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
     distributionX,
     distributionY,
     Context.callee(),
-    0,
+    ONE_COIN,
   );
   const amountsLeftX = u256.Zero; // TODO:
 

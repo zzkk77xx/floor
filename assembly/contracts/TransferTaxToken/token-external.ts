@@ -53,11 +53,11 @@ export function constructor(bs: StaticArray<u8>): void {
     new Args().add(name).add(symbol).add(decimals).add(supply).serialize(),
   );
 
-  // // Initialize the tax recipient to the contract creator
-  // _setTaxRecipient(Context.caller());
-  // _setTaxRate(
-  //   SafeMath256.div(SafeMath256.mul(u256.from(45), PRECISION), u256.from(1000)),
-  // ); // 4.5%
+  // Initialize the tax recipient to the contract creator
+  _setTaxRecipient(Context.caller());
+  _setTaxRate(
+    SafeMath256.div(SafeMath256.mul(u256.from(45), PRECISION), u256.from(1000)),
+  ); // 4.5%
 }
 
 /**
