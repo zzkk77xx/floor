@@ -4,8 +4,8 @@ import { u256 } from 'as-bignum/assembly/integer/u256';
 import {
   SECOND_TAX_RECIPIENT,
   SHARE_FOR_SECOND_TAX_RECIPIENT,
-} from '../storage/TransferTaxDoubleToken';
-import { _transferTaxAmount as super_transferTaxAmount } from './TransferTaxToken-internal';
+} from '../../storage/TransferTaxDoubleToken';
+import { _transferTaxAmount as super_transferTaxAmount } from '../TransferTaxToken/token-internal';
 import { Math512Bits, PRECISION, SafeMath256 } from '@dusalabs/core';
 
 export function _transferTaxAmount(

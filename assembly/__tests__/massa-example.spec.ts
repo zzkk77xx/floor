@@ -1,6 +1,6 @@
 import { IERC20, IFactory, IRouter } from '@dusalabs/core';
-import * as FT from '../contracts/FloorToken';
-import { _tokensInPair } from '../contracts/FloorToken-internal';
+import * as FT from '../contracts/FloorToken/token';
+import { _tokensInPair } from '../contracts/FloorToken/token-internal';
 import { Address } from '@massalabs/massa-as-sdk';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 

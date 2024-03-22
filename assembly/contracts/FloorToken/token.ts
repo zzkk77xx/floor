@@ -24,7 +24,7 @@ import {
   TOKEN_Y,
   _STATUS_ENTERED,
   _STATUS_NOT_ENTERED,
-} from '../storage/FloorToken';
+} from '../../storage/FloorToken';
 import { BinHelper, IFactory, ONE_COIN, SafeMath256 } from '@dusalabs/core';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import * as Ownable from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
@@ -42,7 +42,7 @@ import {
   rebalancePaused,
   roofId,
   setStatus,
-} from './FloorToken-internal';
+} from './token-internal';
 
 export * from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 

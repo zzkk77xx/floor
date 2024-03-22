@@ -39,9 +39,9 @@ import {
   _STATUS_ENTERED,
   _STATUS_NOT_ENTERED,
   FLOOR_PER_BIN,
-} from '../storage/FloorToken';
-import { IFloorToken } from '../interfaces/IFloorToken';
-import { Tuple } from '../libraries/Utils';
+} from '../../storage/FloorToken';
+import { IFloorToken } from '../../interfaces/IFloorToken';
+import { Tuple } from '../../libraries/Utils';
 
 // CLASSES
 

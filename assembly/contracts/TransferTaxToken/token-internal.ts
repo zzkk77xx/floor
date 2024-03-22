@@ -19,9 +19,9 @@ import {
   _EXCLUDED_BOTH,
   _EXCLUDED_FROM,
   _EXCLUDED_TO,
-} from '../storage/TransferTaxToken';
+} from '../../storage/TransferTaxToken';
 import { _burn } from '@massalabs/sc-standards/assembly/contracts/FT/burnable/burn-internal';
-import { super_transfer } from './ERC20/token-internal';
+import { super_transfer } from '../ERC20/token-internal';
 
 export function _excludedFromTax(account: Address): u256 {
   return EXCLUDED_FROM_TAX.getSome(account.toString());

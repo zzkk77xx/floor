@@ -1,8 +1,8 @@
-export * from './FloorToken';
-export * from './TransferTaxToken';
+export * from './FloorToken/token';
+export * from './TransferTaxToken/token';
 
-import * as FT from './FloorToken';
-import * as TTT from './TransferTaxToken-external';
+import * as FT from './FloorToken/token';
+import * as TTT from './TransferTaxToken/token-external';
 import { Args } from '@massalabs/as-types';
 import * as ERC20 from './ERC20/token';
 

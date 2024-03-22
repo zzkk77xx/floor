@@ -10,9 +10,9 @@ import { PRECISION } from '@dusalabs/core';
 import {
   SECOND_TAX_RECIPIENT,
   SHARE_FOR_SECOND_TAX_RECIPIENT,
-} from '../storage/TransferTaxDoubleToken';
+} from '../../storage/TransferTaxDoubleToken';
 
-export * from './TransferTaxToken';
+export * from '../TransferTaxToken/token';
 
 export function setSecondTaxRecipient(bs: StaticArray<u8>): void {
   Ownable.onlyOwner();

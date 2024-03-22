@@ -11,7 +11,7 @@ import {
   _EXCLUDED_BOTH,
   _EXCLUDED_FROM,
   _EXCLUDED_TO,
-} from '../storage/TransferTaxToken';
+} from '../../storage/TransferTaxToken';
 import * as Ownable from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 import {
   _excludedFromTax,
@@ -19,8 +19,8 @@ import {
   _setTaxRate,
   _setTaxRecipient,
   _transfer as _innerTransfer,
-} from './TransferTaxToken-internal';
-import * as ERC20 from './ERC20/token';
+} from './token-internal';
+import * as ERC20 from '../ERC20/token';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import { PRECISION, SafeMath256 } from '@dusalabs/core';
 
