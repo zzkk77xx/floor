@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-import { readFileSync, readdirSync, statSync } from 'fs';
-import { join, basename } from 'path';
+import { readdirSync, statSync } from 'fs';
+import { join, basename, dirname } from 'path';
 import asc from 'assemblyscript/dist/asc.js';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -30,19 +30,6 @@ function searchDirectory(dir: string, fileList: string[] = []): string[] {
   return fileList;
 }
 
-/**
- * sort the file: compile deployer contract after
- *
- * @param files - files to sort
- */
-function sortFiles(files: Array<string>): Array<string> {
-  return files.sort((contract) => {
-    return readFileSync(contract, 'utf-8').includes('fileToByteArray(')
-      ? 1
-      : -1;
-  });
-}
-
 export async function compileAll(): Promise<boolean> {
   const dirToCompile = './assembly/contracts';
   let files: string[] = searchDirectory(dirToCompile);
@@ -53,7 +40,13 @@ export async function compileAll(): Promise<boolean> {
         '--runtime',
         'stub',
         '-o',
-        join('build', basename(file.replace('.ts', '.wasm'))),
+        join(
+          'build',
+          basename(dirname(file)) !== 'contracts'
+            ? basename(dirname(file))
+            : '',
+          basename(file.replace('.ts', '.wasm')),
+        ),
         file,
       ]),
     ),
