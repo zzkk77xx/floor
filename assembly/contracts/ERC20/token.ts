@@ -1,7 +1,10 @@
 /**
  * @author Dusa Labs
+ *
  * @dev override version 0.1.1 of Massa Labs ERC20 contract (with mint and burn flags enabled)
- * @notice add a `beforeTokenTransfer`hook function and include transfer tax
+ *
+ * @notice add a `beforeTokenTransfer` hook and include transfer tax
+ * the child contract must implement the _beforeTokenTransfer and _transfer functions
  */
 
 import {
@@ -29,6 +32,7 @@ import {
   _burn,
   _decreaseTotalSupply,
 } from '@massalabs/sc-standards/assembly/contracts/FT/burnable/burn-internal';
+import { _beforeTokenTransfer, _transfer } from './token-internal';
 
 export const VERSION = stringToBytes('0.0.1');
 
@@ -195,32 +199,6 @@ export function transfer(binaryArgs: StaticArray<u8>): void {
   _transfer(owner, toAddress, amount);
 
   generateEvent(TRANSFER_EVENT_NAME);
-}
-
-/**
- * Transfers tokens from the caller's account to the recipient's account.
- *
- * @param from - sender address
- * @param to - recipient address
- * @param amount - number of token to transfer
- *
- * @returns true if the transfer is successful
- */
-function _transfer(from: Address, to: Address, amount: u256): void {
-  assert(from != to, 'Transfer failed: cannot send tokens to own account');
-
-  _beforeTokenTransfer(from, to, amount);
-
-  const currentFromBalance = _balance(from);
-  const currentToBalance = _balance(to);
-  // @ts-ignore
-  const newToBalance = currentToBalance + amount;
-
-  assert(currentFromBalance >= amount, 'Transfer failed: insufficient funds');
-  assert(newToBalance >= currentToBalance, 'Transfer failed: overflow');
-  // @ts-ignore
-  _setBalance(from, currentFromBalance - amount);
-  _setBalance(to, newToBalance);
 }
 
 // ==================================================== //
@@ -435,18 +413,4 @@ export function burnFrom(binaryArgs: StaticArray<u8>): void {
   _approve(owner, Context.caller(), spenderAllowance - amount);
 
   generateEvent(BURN_EVENT);
-}
-
-// ==================================================== //
-// ====                 OVERRIDES                  ==== //
-// ==================================================== //
-
-// this function should be implemented in the inheriting contract
-function _beforeTokenTransfer(from: Address, to: Address, amount: u256): void {
-  call(
-    Context.callee(),
-    '_beforeTokenTransfer',
-    new Args().add(from).add(to).add(amount),
-    0,
-  );
 }

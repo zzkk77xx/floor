@@ -20,6 +20,8 @@ import {
   _EXCLUDED_FROM,
   _EXCLUDED_TO,
 } from '../storage/TransferTaxToken';
+import { _burn } from '@massalabs/sc-standards/assembly/contracts/FT/burnable/burn-internal';
+import { super_transfer } from './ERC20/token-internal';
 
 export function _excludedFromTax(account: Address): u256 {
   return EXCLUDED_FROM_TAX.getSome(account.toString());
@@ -81,7 +83,7 @@ export function _transfer(
       u256.and(_excludedFromTax(sender), _EXCLUDED_FROM) == _EXCLUDED_FROM ||
       u256.and(_excludedFromTax(recipient), _EXCLUDED_TO) == _EXCLUDED_TO
     ) {
-      // transfer(sender, recipient, amount);
+      super_transfer(sender, recipient, amount);
     } else {
       const taxAmount = Math512Bits.mulDivRoundDown(
         amount,
@@ -92,7 +94,7 @@ export function _transfer(
 
       _transferTaxAmount(sender, taxRecipient(), taxAmount);
       if (amountAfterTax > u256.Zero) {
-        // super._transfer(sender, recipient, amountAfterTax);
+        super_transfer(sender, recipient, amountAfterTax);
       }
     }
   }
@@ -105,14 +107,14 @@ export function _transfer(
  * @param recipient The tax recipient address (or zero address if burn).
  * @param taxAmount The amount to transfer as tax.
  */
-function _transferTaxAmount(
+export function _transferTaxAmount(
   sender: Address,
   recipient: Address,
   taxAmount: u256,
 ): void {
   if (taxAmount > u256.Zero) {
-    // if (recipient == new Address('0')) _burn(sender, taxAmount);
-    // else super._transfer(sender, recipient, taxAmount);
+    if (recipient == new Address('0')) _burn(sender, taxAmount);
+    else _transfer(sender, recipient, taxAmount);
   }
 }
 

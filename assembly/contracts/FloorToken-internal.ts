@@ -304,7 +304,6 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   const ids = new Array<u64>(nbBins).fill(0);
   for (let i: u32 = 0; i < nbBins; i++) {
     distributionX[i] = sharePerBin;
-    distributionY[i] = u256.Zero;
     ids[i] = nextId + i;
   }
 
@@ -329,7 +328,6 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   // Mint or burn the tokens to make sure that the amount of tokens that will be added as liquidity is
   // exactly `floorAmount`.
   // unsafe math is fine
-
   if (previousBalance > floorAmount)
     _burn(pairAddress, u256.sub(previousBalance, floorAmount));
   else if (floorAmount > previousBalance)
@@ -363,7 +361,6 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
 
   // Mint or burn the token to make sure that the amount of token in excess is exactly `previousBalance`
   // unsafe math is fine
-
   if (floorInExcess > previousBalance)
     _burn(pairAddress, u256.sub(floorInExcess, previousBalance));
   else if (previousBalance > floorInExcess)

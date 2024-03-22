@@ -47,13 +47,5 @@ export function _burn(bs: StaticArray<u8>): void {
   ERC20.burnFrom(bs);
 }
 
-// export function _beforeTokenTransfer(bs: StaticArray<u8>): void {
-//   // FloorToken._beforeTokenTransfer(from, to, amount);
-// }
-
 // Add additional business logic here
 // ....
-
-export function event(bs: StaticArray<u8>): void {
-  // FloorToken.event(bs);
-}

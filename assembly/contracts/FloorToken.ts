@@ -246,7 +246,6 @@ export function _beforeTokenTransfer(bs: StaticArray<u8>): void {
     args.nextString().expect('from is missing or invalid'),
   );
   const to = new Address(args.nextString().expect('to is missing or invalid'));
-  const amount = args.nextU256().expect('amount is missing or invalid');
 
   if (from == new Address('0') || to == new Address('0')) return;
 

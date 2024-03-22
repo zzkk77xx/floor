@@ -18,9 +18,11 @@ import {
   _setExcludedFromTax,
   _setTaxRate,
   _setTaxRecipient,
+  _transfer as _innerTransfer,
 } from './TransferTaxToken-internal';
 import * as ERC20 from './ERC20/token';
 import { u256 } from 'as-bignum/assembly/integer/u256';
+import { PRECISION, SafeMath256 } from '@dusalabs/core';
 
 /**
  * @title Transfer Tax Token
@@ -50,6 +52,12 @@ export function constructor(bs: StaticArray<u8>): void {
   ERC20.constructor(
     new Args().add(name).add(symbol).add(decimals).add(supply).serialize(),
   );
+
+  // // Initialize the tax recipient to the contract creator
+  // _setTaxRecipient(Context.caller());
+  // _setTaxRate(
+  //   SafeMath256.div(SafeMath256.mul(u256.from(45), PRECISION), u256.from(1000)),
+  // ); // 4.5%
 }
 
 /**
@@ -62,10 +70,10 @@ export function constructor(bs: StaticArray<u8>): void {
  * @return The exclusion status of `account` from transfer tax.
  */
 export function excludedFromTax(bs: StaticArray<u8>): StaticArray<u8> {
-  const account = new Args(bs)
-    .nextString()
-    .expect('account is missing or invalid');
-  return u256ToBytes(_excludedFromTax(new Address()));
+  const account = new Address(
+    new Args(bs).nextString().expect('account is missing or invalid'),
+  );
+  return u256ToBytes(_excludedFromTax(account));
 }
 
 /**
@@ -124,4 +132,22 @@ export function taxRecipient(): StaticArray<u8> {
 
 export function taxRate(): StaticArray<u8> {
   return Storage.get(TAX_RATE);
+}
+
+export function _transfer(bs: StaticArray<u8>): void {
+  assert(
+    Context.caller().equals(Context.callee()),
+    'only this contract can call this function',
+  );
+
+  const args = new Args(bs);
+  const sender = new Address(
+    args.nextString().expect('sender is missing or invalid'),
+  );
+  const recipient = new Address(
+    args.nextString().expect('recipient is missing or invalid'),
+  );
+  const amount = args.nextU256().expect('amount is missing or invalid');
+
+  _innerTransfer(sender, recipient, amount);
 }
