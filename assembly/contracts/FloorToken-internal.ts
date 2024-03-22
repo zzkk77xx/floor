@@ -370,7 +370,7 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
     _mint(pairAddress, u256.sub(previousBalance, floorInExcess));
 
   // Update the roof id
-  setRoofId(newRoofId);
+  Storage.set(ROOF_ID, u32ToBytes(roofId));
 
   const event = createEvent('ROOF_RAISED', [newRoofId.toString()]);
   generateEvent(event);
@@ -443,7 +443,7 @@ function _reduceRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   }
 
   // Update the roof id
-  setRoofId(newRoofId);
+  Storage.set(ROOF_ID, u32ToBytes(roofId));
 
   const event = createEvent('ROOF_REDUCED', [newRoofId.toString()]);
   generateEvent(event);
@@ -589,10 +589,6 @@ export function setStatus(status: u8): void {
   Storage.set(STATUS, u8toByte(status));
 }
 
-export function setRoofId(roofId: u32): void {
-  Storage.set(ROOF_ID, u32ToBytes(roofId));
-}
-
 // MODIFIERS
 
 /**
@@ -623,9 +619,9 @@ function totalSupply(): u256 {
 }
 
 function _burn(account: Address, amount: u256): void {
-  call(Context.callee(), 'burn', new Args().add(account).add(amount), 0);
+  call(Context.callee(), '_burn', new Args().add(account).add(amount), 0);
 }
 
 function _mint(account: Address, amount: u256): void {
-  call(Context.callee(), 'mint', new Args().add(account).add(amount), 0);
+  call(Context.callee(), '_mint', new Args().add(account).add(amount), 0);
 }

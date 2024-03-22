@@ -14,9 +14,9 @@ import {
 } from '@massalabs/massa-as-sdk';
 import { Args, stringToBytes, u256ToBytes } from '@massalabs/as-types';
 import {
-  onlyOwner,
-  setOwner,
-} from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
+  _setOwner,
+  _isOwner,
+} from '@massalabs/sc-standards/assembly/contracts/utils/ownership-internal';
 import { u256 } from 'as-bignum/assembly';
 import {
   _allowance,
@@ -90,7 +90,7 @@ export function constructor(stringifyArgs: StaticArray<u8>): void {
     .expect('Error while initializing totalSupply');
   Storage.set(TOTAL_SUPPLY_KEY, u256ToBytes(totalSupply));
 
-  setOwner(new Args().add(Context.caller().toString()).serialize());
+  _setOwner(Context.caller().toString());
   _setBalance(Context.caller(), totalSupply);
 }
 
@@ -363,7 +363,11 @@ export function transferFrom(binaryArgs: StaticArray<u8>): void {
  * - the amount of tokens to mint (u256).
  */
 export function mint(binaryArgs: StaticArray<u8>): void {
-  onlyOwner();
+  assert(
+    _isOwner(Context.caller().toString()) ||
+      Context.caller().equals(Context.callee()),
+    'only owner or contract can mint tokens',
+  );
 
   const args = new Args(binaryArgs);
   const recipient = new Address(

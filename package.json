@@ -5,7 +5,7 @@
     "main": "index.js",
     "scripts": {
         "test": "asp --summary",
-        "build": "npx massa-as-compile",
+        "build": "tsx src/compile.ts",
         "clean": "rimraf build",
         "deploy": "tsx src/deploy.ts",
         "prettier": "prettier '**/src/**/*.ts' --check && as-prettier --check assembly",

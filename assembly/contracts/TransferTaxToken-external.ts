@@ -12,14 +12,14 @@ import {
   _EXCLUDED_FROM,
   _EXCLUDED_TO,
 } from '../storage/TransferTaxToken';
-import * as Ownable from '@massalabs/sc-standards/assembly/contracts/utils/ownership-internal';
+import * as Ownable from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 import {
   _excludedFromTax,
   _setExcludedFromTax,
   _setTaxRate,
   _setTaxRecipient,
 } from './TransferTaxToken-internal';
-import * as ERC20 from '@massalabs/sc-standards/assembly/contracts/FT/token';
+import * as ERC20 from './ERC20/token';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 
 /**
@@ -74,7 +74,7 @@ export function excludedFromTax(bs: StaticArray<u8>): StaticArray<u8> {
  * @param newTaxRecipient The new transfer tax recipient.
  */
 export function setTaxRecipient(bs: StaticArray<u8>): void {
-  Ownable._onlyOwner();
+  Ownable.onlyOwner();
 
   const newTaxRecipient = new Address(
     new Args(bs).nextString().expect('newTaxRecipient is missing or invalid'),
@@ -90,7 +90,7 @@ export function setTaxRecipient(bs: StaticArray<u8>): void {
  * @param newTaxRate The new transfer tax rate.
  */
 export function setTaxRate(bs: StaticArray<u8>): void {
-  Ownable._onlyOwner();
+  Ownable.onlyOwner();
 
   const newTaxRate = new Args(bs)
     .nextU256()
@@ -105,7 +105,7 @@ export function setTaxRate(bs: StaticArray<u8>): void {
  * @param excludedStatus The new exclusion status of `account` from transfer tax.
  */
 export function setExcludedFromTax(bs: StaticArray<u8>): void {
-  Ownable._onlyOwner();
+  Ownable.onlyOwner();
 
   const args = new Args(bs);
   const account = new Address(

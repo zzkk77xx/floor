@@ -25,7 +25,7 @@ import {
   _STATUS_ENTERED,
   _STATUS_NOT_ENTERED,
 } from '../storage/FloorToken';
-import { BinHelper, IERC20, IFactory, SafeMath256 } from '@dusalabs/core';
+import { BinHelper, IFactory, ONE_COIN, SafeMath256 } from '@dusalabs/core';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import * as Ownable from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 import {
@@ -95,12 +95,15 @@ export function constructor(bs: StaticArray<u8>): void {
     new Address(tokenY),
     activeId - 1,
     binStep,
-    0,
+    10 * ONE_COIN,
   );
   Storage.set(PAIR, stringToBytes(pair.toString()));
 
   Storage.set(FLOOR_ID, u32ToBytes(activeId));
   setStatus(_STATUS_NOT_ENTERED);
+
+  Storage.set(ROOF_ID, u32ToBytes(0));
+  Storage.set(REBALANCE_PAUSED, boolToByte(false));
 }
 
 // ENDPOINTS
@@ -289,7 +292,7 @@ export function totalSupply(): u256 {
  * @param account The address of the account to mint tokens to.
  * @param amount The amount of tokens to mint.
  */
-export function _mint(account: Address, amount: u256): void {
+export function _mint(bs: StaticArray<u8>): void {
   throw new Error('must be implemented by child');
 }
 
@@ -299,6 +302,14 @@ export function _mint(account: Address, amount: u256): void {
  * @param account The address of the account to burn tokens from.
  * @param amount The amount of tokens to burn.
  */
-export function _burn(account: Address, amount: u256): void {
+export function _burn(bs: StaticArray<u8>): void {
   throw new Error('must be implemented by child');
 }
+
+// MISC
+
+/**
+ * @notice Function used by an SC to receive Massa coins
+ * @param _ unused
+ */
+export function receiveCoins(_: StaticArray<u8>): void {}

@@ -3,9 +3,8 @@ export * from './TransferTaxToken';
 
 import * as FT from './FloorToken';
 import * as TTT from './TransferTaxToken-external';
-import { ERC20 } from '@dusalabs/core/';
 import { Args } from '@massalabs/as-types';
-// import * as ERC20 from '@massalabs/sc-standards/assembly/contracts/FT/token';
+import * as ERC20 from './ERC20/token';
 
 export function constructor(bs: StaticArray<u8>): void {
   const args = new Args(bs);
@@ -40,13 +39,13 @@ export function balanceOf(bs: StaticArray<u8>): StaticArray<u8> {
   return ERC20.balanceOf(bs);
 }
 
-// export function _mint(bs: StaticArray<u8>): void {
-//   // ERC20._mint(account, amount);
-// }
+export function _mint(bs: StaticArray<u8>): void {
+  ERC20.mint(bs);
+}
 
-// export function _burn(bs: StaticArray<u8>): void {
-//   // ERC20._burn(account, amount);
-// }
+export function _burn(bs: StaticArray<u8>): void {
+  ERC20.burnFrom(bs);
+}
 
 // export function _beforeTokenTransfer(bs: StaticArray<u8>): void {
 //   // FloorToken._beforeTokenTransfer(from, to, amount);

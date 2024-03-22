@@ -1,7 +1,6 @@
 import {
   Address,
   Context,
-  balanceOf,
   createSC,
   fileToByteArray,
   generateEvent,
@@ -28,7 +27,7 @@ export function main(bs: StaticArray<u8>): void {
   );
   const floorWasm: StaticArray<u8> = fileToByteArray('build/MyFloorToken.wasm');
   const floorToken = new IMyFloorToken(createSC(floorWasm));
-  transferCoins(floorToken._origin, 5 * ONE_COIN);
+  transferCoins(floorToken._origin, 15 * ONE_COIN);
 
   const tokenY = new IERC20(
     new Address('AS18G57Ys9365w1j655zGzVMi9mGZ1T64D4k5kqVoXvGqBSZjW31'),
@@ -56,6 +55,7 @@ export function main(bs: StaticArray<u8>): void {
     'MyFloorToken',
     'MFT',
   );
+  generateEvent(floorToken._origin.toString());
 
   floorToken.floor.raiseRoof(3);
 
