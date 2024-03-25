@@ -368,7 +368,7 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
     _mint(pairAddress, u256.sub(previousBalance, floorInExcess));
 
   // Update the roof id
-  Storage.set(ROOF_ID, u32ToBytes(roofId));
+  Storage.set(ROOF_ID, u32ToBytes(newRoofId));
 
   const event = createEvent('ROOF_RAISED', [newRoofId.toString()]);
   generateEvent(event);
@@ -441,7 +441,7 @@ function _reduceRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   }
 
   // Update the roof id
-  Storage.set(ROOF_ID, u32ToBytes(roofId));
+  Storage.set(ROOF_ID, u32ToBytes(newRoofId));
 
   const event = createEvent('ROOF_REDUCED', [newRoofId.toString()]);
   generateEvent(event);

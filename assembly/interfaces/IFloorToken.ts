@@ -8,12 +8,21 @@ import {
   bytesToU256,
   bytesToU32,
 } from '@massalabs/as-types';
-import { Address, call } from '@massalabs/massa-as-sdk';
+import { Address, Storage, call } from '@massalabs/massa-as-sdk';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import { Tuple } from '../libraries/Utils';
+import { FLOOR_ID, ROOF_ID } from '../storage/FloorToken';
 
 export class IFloorToken {
   constructor(public _origin: Address) {}
+
+  floorId(): u32 {
+    return bytesToU32(Storage.getOf(this._origin, FLOOR_ID));
+  }
+
+  roofId(): u32 {
+    return bytesToU32(Storage.getOf(this._origin, ROOF_ID));
+  }
 
   pair(): IPair {
     const res = call(this._origin, 'pair', NoArg, 0);
