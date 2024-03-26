@@ -218,12 +218,12 @@ export function _safeRebalance(
   // Make sure we don't burn any bins greater or equal to the active bin, as this might send some unexpected
   // tokens to the pair contract
   assert(
-    resAfter._1 == reserveFloorBefore,
+    resAfter._0 == reserveFloorBefore,
     'FloorToken: token reserve changed',
   );
 
   // Calculate the delta amounts to get the ratio
-  const deltaReserveTokenY = SafeMath256.sub(resBefore._1, resAfter._1);
+  const deltaReserveTokenY = SafeMath256.sub(reserveTokenYBefore, resAfter._1);
   const deltaTokenYBalance = SafeMath256.sub(
     tokenYBalanceSubProtocolFees,
     resAfter._1,
