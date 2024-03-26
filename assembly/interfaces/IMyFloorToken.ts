@@ -1,13 +1,14 @@
 import { Address, call } from '@massalabs/massa-as-sdk';
 import { IFloorToken } from './IFloorToken';
 import { ITransferTaxToken } from './ITransferTaxToken';
+import { ITransferDoubleTaxToken } from './ITransferDoubleTaxToken';
 import { IERC20, IFactory } from '@dusalabs/core';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import { Args, NoArg, bytesToU256 } from '@massalabs/as-types';
 
 export class IMyFloorToken {
   floor: IFloorToken;
-  transferTax: ITransferTaxToken;
+  transferTax: ITransferTaxToken; // or ITransferDoubleTaxToken
 
   constructor(public _origin: Address) {
     this.floor = new IFloorToken(_origin);

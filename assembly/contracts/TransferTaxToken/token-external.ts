@@ -20,7 +20,7 @@ import {
   _setTaxRecipient,
   _transfer as _innerTransfer,
 } from './token-internal';
-import * as ERC20 from '../ERC20/token';
+import * as ERC20 from '../ERC20';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import { PRECISION, SafeMath256 } from '@dusalabs/core';
 

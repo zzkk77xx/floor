@@ -81,10 +81,6 @@ export function rebalancePaused(): bool {
   return byteToBool(Storage.get(REBALANCE_PAUSED));
 }
 
-export function range(): Tuple<u32, u32> {
-  return new Tuple(floorId(), roofId());
-}
-
 export function activeId(): u32 {
   return pair().getPairInformation().activeId;
 }

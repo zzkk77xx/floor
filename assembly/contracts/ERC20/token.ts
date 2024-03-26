@@ -344,7 +344,7 @@ export function mint(binaryArgs: StaticArray<u8>): void {
   assert(
     _isOwner(Context.caller().toString()) ||
       Context.caller().equals(Context.callee()),
-    'only owner or contract can mint tokens',
+    'only owner or contract itself can mint tokens',
   );
 
   const args = new Args(binaryArgs);

@@ -49,8 +49,6 @@ export class IFloorToken {
     return bytesToU256(res);
   }
 
-  //  range(): (uint24, uint24);
-
   rebalancePaused(): bool {
     const res = call(this._origin, 'rebalancePaused', NoArg, 0);
     return byteToBool(res);
