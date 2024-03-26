@@ -12,7 +12,7 @@ import {
   SHARE_FOR_SECOND_TAX_RECIPIENT,
 } from '../../storage/TransferTaxDoubleToken';
 
-export * from '../TransferTaxToken/token';
+export * from '../TransferTaxToken';
 
 export function setSecondTaxRecipient(bs: StaticArray<u8>): void {
   Ownable.onlyOwner();
