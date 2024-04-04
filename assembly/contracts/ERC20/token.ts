@@ -354,6 +354,7 @@ export function mint(binaryArgs: StaticArray<u8>): void {
   const amount = args
     .nextU256()
     .expect('amount argument is missing or invalid');
+
   _beforeTokenTransfer(new Address('0'), recipient, amount);
 
   _mint(binaryArgs);
@@ -391,6 +392,12 @@ export function burn(binaryArgs: StaticArray<u8>): void {
  *
  */
 export function burnFrom(binaryArgs: StaticArray<u8>): void {
+  assert(
+    _isOwner(Context.caller().toString()) ||
+      Context.caller().equals(Context.callee()),
+    'only owner or contract itself can mint tokens',
+  );
+
   const args = new Args(binaryArgs);
   const owner = new Address(
     args.nextString().expect('owner argument is missing or invalid'),
@@ -399,18 +406,11 @@ export function burnFrom(binaryArgs: StaticArray<u8>): void {
     .nextU256()
     .expect('amount argument is missing or invalid');
 
-  const spenderAllowance = _allowance(owner, Context.caller());
-
-  assert(spenderAllowance >= amount, 'burnFrom failed: insufficient allowance');
-
   _beforeTokenTransfer(owner, new Address('0'), amount);
 
   _decreaseTotalSupply(amount);
 
   _burn(owner, amount);
-
-  // @ts-ignore
-  _approve(owner, Context.caller(), spenderAllowance - amount);
 
   generateEvent(BURN_EVENT);
 }
