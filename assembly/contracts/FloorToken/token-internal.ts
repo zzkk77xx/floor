@@ -250,7 +250,6 @@ export function _safeRebalance(
     Context.callee(),
     ONE_COIN,
   );
-  // TODO: send left over to pair
 
   assert(
     r.amountYAdded ==
@@ -296,11 +295,10 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   const floorAmount = SafeMath256.mul(floorPerBin, u256.from(nbBins));
 
   // Encode the liquidity parameters for each bin
-  const distributionX = new Array<u256>(nbBins).fill(u256.Zero);
+  const distributionX = new Array<u256>(nbBins).fill(sharePerBin);
   const distributionY = new Array<u256>(nbBins).fill(u256.Zero);
   const ids = new Array<u64>(nbBins).fill(0);
   for (let i: u32 = 0; i < nbBins; i++) {
-    distributionX[i] = sharePerBin;
     ids[i] = nextId + i;
   }
 
@@ -338,14 +336,13 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
     Context.callee(),
     ONE_COIN,
   );
-  const amountsLeftX = u256.Zero; // TODO:
 
   // Make sure that no tokens Y were added as liquidity as this would mean stealing user funds.
   assert(mintRes.amountYAdded == u256.Zero, 'FloorToken: invalid amounts');
 
-  // Make sure that the amount of tokens X that were added as liquidity is exactly `tokenAmount`
+  // Make sure that the amount of tokens X that were added as liquidity is exactly `floorAmount`
   let floorInExcess = u256.Zero;
-  if (amountsLeftX > u256.Zero) {
+  if (mintRes.amountXAdded != floorAmount) {
     const floorReserveAfter = reserves()._0;
     const floorProtocolFeesAfter = protocolFees()._0;
 
