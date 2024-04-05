@@ -87,8 +87,8 @@ export function activeId(): u32 {
 
 export function reserves(): Tuple<u256, u256> {
   const res = pair().getPairInformation();
-  const reserveX = SafeMath256.sub(res.feesX.total, res.feesX.protocol);
-  const reserveY = SafeMath256.sub(res.feesY.total, res.feesY.protocol);
+  const reserveX = SafeMath256.sub(res.reserveX, res.feesX.protocol);
+  const reserveY = SafeMath256.sub(res.reserveY, res.feesY.protocol);
   return new Tuple(reserveX, reserveY);
 }
 
