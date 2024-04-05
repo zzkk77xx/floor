@@ -25,7 +25,13 @@ import {
   _STATUS_ENTERED,
   _STATUS_NOT_ENTERED,
 } from '../../storage/FloorToken';
-import { BinHelper, IFactory, ONE_COIN, SafeMath256 } from '@dusalabs/core';
+import {
+  BinHelper,
+  IERC20,
+  IFactory,
+  ONE_COIN,
+  SafeMath256,
+} from '@dusalabs/core';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import * as Ownable from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 import {
@@ -135,8 +141,9 @@ export function tokensInPair(_: StaticArray<u8>): StaticArray<u8> {
 export function calculateNewFloorId(_: StaticArray<u8>): StaticArray<u8> {
   const res = _getAmountsInPair(floorId(), activeId(), roofId());
 
+  const _totalSupply = new IERC20(Context.callee()).totalSupply();
   const floorInCirculation = SafeMath256.sub(
-    totalSupply(),
+    _totalSupply,
     res.totalFloorInPair,
   );
 
@@ -167,8 +174,8 @@ export function rebalanceFloor(_: StaticArray<u8>): void {
  * @notice Raises the roof by `nbBins` bins. New tokens will be minted to the pair contract and directly
  * added to new bins that weren't previously in the range. This will not decrease the floor price as the
  * tokens minted are directly added to the pair contract, so the circulating supply is not increased.
- * @dev The new roof will be `roofId + nbBins`, if the roof wasn't already raised, the new roof will be
- * `floorId + nbBins - 1`. Only callable by the owner.
+ * @dev The new roof will be `roofId + nbBins`, or `floorId + nbBins - 1` if the roof wasn't
+ * already raised. Only callable by the owner.
  * This functions should not be called too often as it will increase the gas cost of the transfers, and
  * might even make the transfers fail if the transaction runs out of gas. It is recommended to only call this
  * function when the active bin is close to the roof bin.
