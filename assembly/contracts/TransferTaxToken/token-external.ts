@@ -45,19 +45,18 @@ export function constructor(bs: StaticArray<u8>): void {
   const args = new Args(bs);
   const name = args.nextString().expect('name is missing or invalid');
   const symbol = args.nextString().expect('symbol is missing or invalid');
-
-  // 18 decimals and 0 initial supply by default
-  const decimals: u8 = 18;
-  const supply = u256.Zero;
+  const decimals = args.nextU8().expect('decimals is missing or invalid');
+  const supply = args.nextU256().expect('supply is missing or invalid');
   ERC20.constructor(
     new Args().add(name).add(symbol).add(decimals).add(supply).serialize(),
   );
 
-  // Initialize the tax recipient to the contract creator
-  _setTaxRecipient(Context.caller());
-  _setTaxRate(
-    SafeMath256.div(SafeMath256.mul(u256.from(45), PRECISION), u256.from(1000)),
-  ); // 4.5%
+  const taxRecipient = args
+    .nextString()
+    .expect('taxRecipient is missing or invalid');
+  _setTaxRecipient(new Address(taxRecipient));
+  const taxRate = args.nextU256().expect('taxRate is missing or invalid');
+  _setTaxRate(taxRate);
 }
 
 /**

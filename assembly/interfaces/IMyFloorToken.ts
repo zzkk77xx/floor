@@ -23,6 +23,9 @@ export class IMyFloorToken {
     floorPerBin: u256,
     name: string,
     symbol: string,
+    decimals: u8,
+    supply: u256,
+    taxRate: u256,
   ): void {
     call(
       this._origin,
@@ -34,7 +37,10 @@ export class IMyFloorToken {
         .add(binStep)
         .add(floorPerBin)
         .add(name)
-        .add(symbol),
+        .add(symbol)
+        .add(decimals)
+        .add(supply)
+        .add(taxRate),
       0,
     );
   }
