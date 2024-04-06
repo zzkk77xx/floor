@@ -11,7 +11,7 @@ import {
 import { Address, Storage, call } from '@massalabs/massa-as-sdk';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import { Tuple } from '../libraries/Utils';
-import { FLOOR_ID, ROOF_ID } from '../storage/FloorToken';
+import { FLOOR_ID, REBALANCE_PAUSED, ROOF_ID } from '../storage/FloorToken';
 
 export class IFloorToken {
   constructor(public _origin: Address) {}
@@ -50,8 +50,7 @@ export class IFloorToken {
   }
 
   rebalancePaused(): bool {
-    const res = call(this._origin, 'rebalancePaused', NoArg, 0);
-    return byteToBool(res);
+    return byteToBool(Storage.getOf(this._origin, REBALANCE_PAUSED));
   }
 
   tokensInPair(): Tuple<u256, u256> {
