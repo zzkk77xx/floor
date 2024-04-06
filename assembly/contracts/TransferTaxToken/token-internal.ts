@@ -5,12 +5,19 @@ import {
   createEvent,
 } from '@dusalabs/core';
 import {
+  Args,
   bytesToString,
   bytesToU256,
   stringToBytes,
   u256ToBytes,
 } from '@massalabs/as-types';
-import { Address, Storage, generateEvent } from '@massalabs/massa-as-sdk';
+import {
+  Address,
+  Context,
+  Storage,
+  call,
+  generateEvent,
+} from '@massalabs/massa-as-sdk';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import {
   EXCLUDED_FROM_TAX,
@@ -21,7 +28,6 @@ import {
   _EXCLUDED_TO,
   _EXCLUDED_NONE,
 } from '../../storage/TransferTaxToken';
-import { _burn } from '@massalabs/sc-standards/assembly/contracts/FT/burnable/burn-internal';
 import { super_transfer } from '../ERC20/token-internal';
 
 export function _excludedFromTax(account: Address): u256 {
@@ -125,4 +131,8 @@ function taxRecipient(): Address {
 
 function taxRate(): u256 {
   return bytesToU256(Storage.get(TAX_RATE));
+}
+
+function _burn(account: Address, amount: u256): void {
+  call(Context.callee(), '_burn', new Args().add(account).add(amount), 0);
 }
