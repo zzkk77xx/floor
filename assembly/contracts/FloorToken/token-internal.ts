@@ -41,8 +41,7 @@ import {
   _STATUS_NOT_ENTERED,
   FLOOR_PER_BIN,
 } from '../../storage/FloorToken';
-import { IFloorToken } from '../../interfaces/IFloorToken';
-import { Tuple } from '../../libraries/Utils';
+import { Tuple, masToSend } from '../../libraries/Utils';
 
 // CLASSES
 
@@ -198,7 +197,15 @@ export function _safeRebalance(
   const reserveTokenYBefore = resBefore._1;
 
   // Burns the shares and send the tokenY to the pair as we will add all the tokenY to the new floor bin
-  pair().burn(ids, shares, pair()._origin, 0);
+  const _pair = pair();
+  _pair.safeBatchTransferFrom(
+    Context.callee(),
+    _pair._origin,
+    ids,
+    shares,
+    masToSend,
+  );
+  _pair.burn(ids, shares, _pair._origin, masToSend);
 
   // Get the current tokenY balance of the pair contract (minus the protocol fees)
   const tokenYProtocolFees = protocolFees()._1;
