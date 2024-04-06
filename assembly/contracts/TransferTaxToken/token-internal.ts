@@ -95,9 +95,8 @@ export function _transfer(
       const amountAfterTax = SafeMath256.sub(amount, taxAmount);
 
       _transferTaxAmount(sender, taxRecipient(), taxAmount);
-      if (amountAfterTax > u256.Zero) {
+      if (amountAfterTax > u256.Zero)
         super_transfer(sender, recipient, amountAfterTax);
-      }
     }
   }
 }
@@ -116,7 +115,7 @@ export function _transferTaxAmount(
 ): void {
   if (taxAmount > u256.Zero) {
     if (recipient == new Address('0')) _burn(sender, taxAmount);
-    else _transfer(sender, recipient, taxAmount);
+    else super_transfer(sender, recipient, taxAmount);
   }
 }
 
