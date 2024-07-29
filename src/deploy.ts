@@ -10,6 +10,7 @@ import {
   MAX_GAS_DEPLOYMENT,
   CHAIN_ID,
   DefaultProviderUrls,
+  MassaUnits,
 } from '@massalabs/massa-web3';
 
 // Obtain the current file name and directory paths
@@ -25,7 +26,7 @@ const secretKey = getEnvVariable('WALLET_SECRET_KEY');
 // Define deployment parameters
 const chainId = CHAIN_ID.BuildNet; // Choose the chain ID corresponding to the network you want to deploy to
 const maxGas = MAX_GAS_DEPLOYMENT; // Gas for deployment Default is the maximum gas allowed for deployment
-const fees = 0n; // Fees to be paid for deployment. Default is 0
+const fees = MassaUnits.oneMassa / 100n; // Fees to be paid for deployment. Default is 0.01
 const waitFirstEvent = true;
 
 const deployerAccount = await WalletClient.getAccountFromSecretKey(secretKey);
