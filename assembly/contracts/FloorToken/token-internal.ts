@@ -11,7 +11,6 @@ import {
 import {
   bytesToString,
   byteToU8,
-  bytesToU16,
   bytesToU32,
   byteToBool,
   u32ToBytes,
@@ -64,8 +63,8 @@ export function status(): u8 {
   return byteToU8(Storage.get(STATUS));
 }
 
-export function binStep(): u16 {
-  return bytesToU16(Storage.get(BIN_STEP));
+export function binStep(): u32 {
+  return bytesToU32(Storage.get(BIN_STEP));
 }
 
 export function floorId(): u32 {

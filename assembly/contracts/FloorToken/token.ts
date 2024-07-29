@@ -3,7 +3,6 @@ import {
   boolToByte,
   byteToU8,
   stringToBytes,
-  u16ToBytes,
   u256ToBytes,
   u32ToBytes,
 } from '@massalabs/as-types';
@@ -86,12 +85,12 @@ export function constructor(bs: StaticArray<u8>): void {
     new Address(args.nextString().expect('lbFactory is missing or invalid')),
   );
   const activeId = args.nextU32().expect('activeId is missing or invalid');
-  const binStep = args.nextU16().expect('binStep is missing or invalid');
+  const binStep = args.nextU32().expect('binStep is missing or invalid');
   const floorPerBin = args
     .nextU256()
     .expect('floorPerBin is missing or invalid');
 
-  Storage.set(BIN_STEP, u16ToBytes(binStep));
+  Storage.set(BIN_STEP, u32ToBytes(binStep));
   Storage.set(FLOOR_PER_BIN, u256ToBytes(floorPerBin));
   Storage.set(TOKEN_Y, stringToBytes(tokenY));
 

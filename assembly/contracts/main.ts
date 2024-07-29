@@ -31,7 +31,7 @@ export function main(bs: StaticArray<u8>): void {
   transferCoins(floorToken._origin, 15 * ONE_COIN);
 
   const activeId = 8378237; // 1 with decimalsX = 18 and decimalsY = 9
-  const binStep: u16 = 20;
+  const binStep: u32 = 20;
   const floorPerBin = u256.mul(u256.from(100), u256.fromU64(10 ** 18));
   const tokenY = new IERC20(
     new Address('AS1LotSq7qVXma2L3EkiMjALtf9P8rCa6C4GkBhQQEYTovHQhZZY'),

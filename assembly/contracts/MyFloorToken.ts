@@ -19,7 +19,7 @@ export function constructor(bs: StaticArray<u8>): void {
   const tokenY = args.nextString().expect('tokenY is missing or invalid');
   const factory = args.nextString().expect('factory is missing or invalid');
   const activeId = args.nextU32().expect('activeId is missing or invalid');
-  const binStep = args.nextU16().expect('binStep is missing or invalid');
+  const binStep = args.nextU32().expect('binStep is missing or invalid');
   const floorPerBin = args
     .nextU256()
     .expect('floorPerBin is missing or invalid');

@@ -4,7 +4,6 @@ import {
   NoArg,
   byteToBool,
   bytesToString,
-  bytesToU16,
   bytesToU256,
   bytesToU32,
 } from '@massalabs/as-types';
@@ -34,9 +33,9 @@ export class IFloorToken {
     return new IERC20(new Address(bytesToString(res)));
   }
 
-  binStep(): u16 {
+  binStep(): u32 {
     const res = call(this._origin, 'binStep', NoArg, 0);
-    return bytesToU16(res);
+    return bytesToU32(res);
   }
 
   floorPerBin(): u256 {

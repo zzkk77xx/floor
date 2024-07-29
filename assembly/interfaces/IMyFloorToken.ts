@@ -19,7 +19,7 @@ export class IMyFloorToken {
     tokenY: IERC20,
     lbFactory: IFactory,
     activeId: u32,
-    binStep: u16,
+    binStep: u32,
     floorPerBin: u256,
     name: string,
     symbol: string,
