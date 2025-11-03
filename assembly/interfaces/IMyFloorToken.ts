@@ -26,6 +26,7 @@ export class IMyFloorToken {
     decimals: u8,
     supply: u256,
     taxRate: u256,
+    taxRecipient: Address,
   ): void {
     call(
       this._origin,
@@ -40,7 +41,8 @@ export class IMyFloorToken {
         .add(symbol)
         .add(decimals)
         .add(supply)
-        .add(taxRate),
+        .add(taxRate)
+        .add(taxRecipient),
       0,
     );
   }

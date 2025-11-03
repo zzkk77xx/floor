@@ -38,7 +38,9 @@ export function constructor(bs: StaticArray<u8>): void {
   const decimals = args.nextU8().expect('decimals is missing or invalid');
   const supply = args.nextU256().expect('supply is missing or invalid');
   const taxRate = args.nextU256().expect('taxRate is missing or invalid');
-  const taxRecipient = new Address('0'); // important in order to burn tax amount
+  const taxRecipient = args
+    .nextString()
+    .expect('taxRecipient is missing or invalid');
   TTT.constructor(
     new Args()
       .add(name)

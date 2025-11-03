@@ -49,23 +49,27 @@ const floorPerBin = 100n * PRECISION;
     [
       // {
       //   data: readFileSync(path.join(__dirname, 'build', 'main.wasm')),
-      //   coins: fromMAS(50),
+      //   coins: fromMAS(10),
       // },
       {
-        data: readFileSync(path.join(__dirname, 'build', 'MyFloorToken.wasm')),
-        coins: fromMAS(50),
-        args: new Args()
-          .addString(WMAS)
-          .addString(FACTORY)
-          .addU32(activeId)
-          .addU32(binStep)
-          .addU256(floorPerBin)
-          .addString('My Floor Token')
-          .addString('FLOOR')
-          .addU8(18) // decimals
-          .addU256(0n) // initial supply
-          .addU256(PRECISION / 20n), // tax rate (5%)
+        data: readFileSync(path.join(__dirname, 'build', 'deployer.wasm')),
+        coins: fromMAS(10),
       },
+      // {
+      //   data: readFileSync(path.join(__dirname, 'build', 'MyFloorToken.wasm')),
+      //   coins: fromMAS(10),
+      //   args: new Args()
+      //     .addString(WMAS)
+      //     .addString(FACTORY)
+      //     .addU32(activeId)
+      //     .addU32(binStep)
+      //     .addU256(floorPerBin)
+      //     .addString('My Floor Token')
+      //     .addString('FLOOR')
+      //     .addU8(18) // decimals
+      //     .addU256(0n) // initial supply
+      //     .addU256(PRECISION / 20n), // tax rate (5%)
+      // },
     ],
     chainId,
     fees,
