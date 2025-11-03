@@ -60,6 +60,7 @@ export function main(bs: StaticArray<u8>): void {
     decimals,
     supply,
     taxRate,
+    new Address('0'),
   );
 
   floorToken.floor.raiseRoof(10);

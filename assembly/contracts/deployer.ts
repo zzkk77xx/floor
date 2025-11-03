@@ -4,6 +4,8 @@ import {
   generateEvent,
   transferCoins,
   createEvent,
+  Context,
+  call,
 } from '@massalabs/massa-as-sdk';
 import { Args } from '@massalabs/as-types';
 import { IMyFloorToken } from '../interfaces/IMyFloorToken';
@@ -19,8 +21,8 @@ export function constructor(): void {
 
 export function deploy(bs: StaticArray<u8>): void {
   const floorWasm: StaticArray<u8> = fileToByteArray('build/MyFloorToken.wasm');
-  const floor = new IMyFloorToken(createSC(floorWasm));
-  transferCoins(floor._origin, 1 * ONE_COIN);
+  const myFloor = new IMyFloorToken(createSC(floorWasm));
+  transferCoins(myFloor._origin, 11 * ONE_COIN); // 10 to create LB pair + 1 to pay fees
 
   const args = new Args(bs);
 
@@ -42,7 +44,7 @@ export function deploy(bs: StaticArray<u8>): void {
     ? new Address(taxRecipientBs.unwrap())
     : new Address('0');
 
-  floor.init(
+  myFloor.init(
     new IERC20(new Address(tokenY)),
     new IFactory(new Address(factory)),
     activeId,
@@ -56,5 +58,12 @@ export function deploy(bs: StaticArray<u8>): void {
     taxRecipient,
   );
 
-  generateEvent(createEvent('NEW_FLOOR', [floor._origin.toString()]));
+  call(
+    myFloor._origin,
+    'setOwner',
+    new Args().add(Context.caller().toString()),
+    0,
+  );
+
+  generateEvent(createEvent('NEW_FLOOR', [myFloor._origin.toString()]));
 }
