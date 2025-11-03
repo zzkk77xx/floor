@@ -13,46 +13,64 @@ import {
   MassaUnits,
 } from '@massalabs/massa-web3';
 
-// Obtain the current file name and directory paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(path.dirname(__filename));
 
-// Load .env file content into process.env
 dotenv.config();
 
-// Get environment variables
-const publicApi = DefaultProviderUrls.BUILDNET;
+const IS_BUILDNET = true;
+const publicApi = IS_BUILDNET
+  ? DefaultProviderUrls.BUILDNET
+  : DefaultProviderUrls.MAINNET;
 const secretKey = getEnvVariable('WALLET_SECRET_KEY');
-// Define deployment parameters
-const chainId = CHAIN_ID.BuildNet; // Choose the chain ID corresponding to the network you want to deploy to
-const maxGas = MAX_GAS_DEPLOYMENT; // Gas for deployment Default is the maximum gas allowed for deployment
-const fees = MassaUnits.oneMassa / 100n; // Fees to be paid for deployment. Default is 0.01
+const chainId = IS_BUILDNET ? CHAIN_ID.BuildNet : CHAIN_ID.MainNet;
+const maxGas = MAX_GAS_DEPLOYMENT;
+const fees = MassaUnits.oneMassa / 100n;
 const waitFirstEvent = true;
 
 const deployerAccount = await WalletClient.getAccountFromSecretKey(secretKey);
 
-/**
- * Deploy one or more smart contracts.
- *
- * @remarks
- * Multiple smart contracts can be deployed by adding more objects to the array.
- * After all deployments, it terminates the process.
- */
+// https://docs.dusa.io/deployment-addresses
+const WMAS = IS_BUILDNET
+  ? 'AS12FW5Rs5YN2zdpEnqwj4iHUUPt9R4Eqjq2qtpJFNKW3mn33RuLU'
+  : '';
+const FACTORY = IS_BUILDNET
+  ? 'AS12w3vcEYn8VBX1utw1fSmFNbYv9vMvy5n8tqCJjoGz3vaQYEhfp'
+  : 'AS127Lxdux4HCUkZL89SrRYR5kq2u8t64Jt3aYj786t6fBF1cZGcu';
+const activeId = 8378237; // 1 with decimalsX = 18 and decimalsY = 9
+const binStep = 20;
+const PRECISION = 1_000_000_000_000_000_000n;
+const floorPerBin = 100n * PRECISION;
+
 (async () => {
   await deploySC(
-    publicApi, // JSON RPC URL
-    deployerAccount, // account deploying the smart contract(s)
+    publicApi,
+    deployerAccount,
     [
+      // {
+      //   data: readFileSync(path.join(__dirname, 'build', 'main.wasm')),
+      //   coins: fromMAS(50),
+      // },
       {
-        data: readFileSync(path.join(__dirname, 'build', 'main.wasm')), // smart contract bytecode
-        coins: fromMAS(50), // coins for deployment
+        data: readFileSync(path.join(__dirname, 'build', 'MyFloorToken.wasm')),
+        coins: fromMAS(50),
+        args: new Args()
+          .addString(WMAS)
+          .addString(FACTORY)
+          .addU32(activeId)
+          .addU32(binStep)
+          .addU256(floorPerBin)
+          .addString('My Floor Token')
+          .addString('FLOOR')
+          .addU8(18) // decimals
+          .addU256(0n) // initial supply
+          .addU256(PRECISION / 20n), // tax rate (5%)
       },
-      // Additional smart contracts can be added here for deployment
     ],
     chainId,
     fees,
     maxGas,
     waitFirstEvent,
   );
-  process.exit(0); // terminate the process after deployment(s)
+  process.exit(0);
 })();

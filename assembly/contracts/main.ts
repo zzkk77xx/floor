@@ -17,6 +17,9 @@ import {
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import { IMyFloorToken } from '../interfaces/IMyFloorToken';
 
+// script to deploy a FLOOR, raise roof and swap in a single transaction
+// testing purposes only
+
 export function constructor(bs: StaticArray<u8>): void {
   main(bs);
 }
@@ -52,7 +55,7 @@ export function main(bs: StaticArray<u8>): void {
     activeId,
     binStep,
     floorPerBin,
-    'Floor Token',
+    'My Floor Token',
     'FLOOR',
     decimals,
     supply,
