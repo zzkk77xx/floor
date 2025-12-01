@@ -120,7 +120,7 @@ export function _getAmountsInPair(
   const nbBinsLeftSide = floorId > activeId ? 0 : activeId - floorId + 1;
 
   const sharesLeftSide = new Array<u256>(nbBinsLeftSide).fill(u256.Zero);
-  const reservesY = new Array<u256>(nbBins).fill(u256.Zero);
+  const reservesY = new Array<u256>(nbBinsLeftSide).fill(u256.Zero);
 
   const _pair = pair();
 
