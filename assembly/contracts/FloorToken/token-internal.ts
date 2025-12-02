@@ -87,12 +87,14 @@ export function activeId(): u32 {
 export function reserves(): Tuple<u256, u256> {
   const res = pair().getPairInformation();
   // Protocol fees should never exceed reserves, but add safety check
-  const reserveX = res.reserveX > res.feesX.protocol
-    ? SafeMath256.sub(res.reserveX, res.feesX.protocol)
-    : u256.Zero;
-  const reserveY = res.reserveY > res.feesY.protocol
-    ? SafeMath256.sub(res.reserveY, res.feesY.protocol)
-    : u256.Zero;
+  const reserveX =
+    res.reserveX > res.feesX.protocol
+      ? SafeMath256.sub(res.reserveX, res.feesX.protocol)
+      : u256.Zero;
+  const reserveY =
+    res.reserveY > res.feesY.protocol
+      ? SafeMath256.sub(res.reserveY, res.feesY.protocol)
+      : u256.Zero;
   return new Tuple(reserveX, reserveY);
 }
 
@@ -255,13 +257,12 @@ export function _safeRebalance(
   // we only add tokenY, so any token that was sent to the pair prior to the rebalance will be sent back
   // to the pair contract after the rebalance. This can't underflow as `deltaTokenYBalance > 0`.
   const prod = SafeMath256.mul(deltaReserveTokenY, PRECISION);
-  const quot = SafeMath256.div(
-    SafeMath256.sub(deltaTokenYBalance, u256.One),
-    deltaTokenYBalance,
-  );
   const distrib =
     deltaTokenYBalance > deltaReserveTokenY
-      ? SafeMath256.add(prod, quot)
+      ? SafeMath256.div(
+          SafeMath256.add(prod, SafeMath256.sub(deltaTokenYBalance, u256.One)),
+          deltaTokenYBalance,
+        )
       : PRECISION;
 
   // Mint the liquidity to the pair contract, any left over will be sent back to the pair contract as
@@ -334,16 +335,18 @@ export function _raiseRoof(roofId: u32, floorId: u32, nbBins: u32): void {
   const _pair = pair();
   const pairAddress = _pair._origin;
   const pairBalance = balanceOf(pairAddress);
-  const floorBalanceSubProtocolFees = pairBalance > floorProtocolFees
-    ? SafeMath256.sub(pairBalance, floorProtocolFees)
-    : u256.Zero;
+  const floorBalanceSubProtocolFees =
+    pairBalance > floorProtocolFees
+      ? SafeMath256.sub(pairBalance, floorProtocolFees)
+      : u256.Zero;
 
   // Calculate the amount of tokens that were sent to the pair contract waiting to be added as liquidity or
   // swapped for tokenY.
   // On a fresh token with no reserves, both values should be 0
-  const previousBalance = floorBalanceSubProtocolFees > floorReserve
-    ? SafeMath256.sub(floorBalanceSubProtocolFees, floorReserve)
-    : u256.Zero;
+  const previousBalance =
+    floorBalanceSubProtocolFees > floorReserve
+      ? SafeMath256.sub(floorBalanceSubProtocolFees, floorReserve)
+      : u256.Zero;
 
   // Mint or burn the tokens to make sure that the amount of tokens that will be added as liquidity is
   // exactly `floorAmount`.
@@ -492,14 +495,20 @@ export function _rebalanceFloor(): bool {
   // Calculate the amount of tokens in circulation, which is the total supply minus the tokens that are
   // in the pair and minus the tax recipient balance (which should not count as circulating supply).
   const _totalSupply = totalSupply();
-  const _floorInCirculation = SafeMath256.sub(_totalSupply, res.totalFloorInPair);
+  const _floorInCirculation = SafeMath256.sub(
+    _totalSupply,
+    res.totalFloorInPair,
+  );
 
   // Get the tax recipient balance and exclude it from circulation
-  const taxRecipientAddress = new Address(bytesToString(Storage.get(TAX_RECIPIENT)));
+  const taxRecipientAddress = new Address(
+    bytesToString(Storage.get(TAX_RECIPIENT)),
+  );
   const taxRecipientBalance = balanceOf(taxRecipientAddress);
-  const floorInCirculation = _floorInCirculation > taxRecipientBalance
-    ? SafeMath256.sub(_floorInCirculation, taxRecipientBalance)
-    : u256.Zero;
+  const floorInCirculation =
+    _floorInCirculation > taxRecipientBalance
+      ? SafeMath256.sub(_floorInCirculation, taxRecipientBalance)
+      : u256.Zero;
 
   // Calculate the new floor id
   const newFloorId = _calculateNewFloorId(
