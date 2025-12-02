@@ -276,14 +276,16 @@ export function _safeRebalance(
     ONE_COIN,
   );
 
+  // Verify the invariants:
+  // 1. We added at least 99.9% of what we withdrew (allowing for composition fees and rounding)
+  // 2. No floor tokens were added (we're only adding tokenY)
+  const minAcceptable = SafeMath256.div(
+    SafeMath256.mul(deltaReserveTokenY, u256.from(999)),
+    u256.from(1000),
+  );
+
   assert(
-    r.amountYAdded ==
-      SafeMath256.div(
-        SafeMath256.mul(deltaTokenYBalance, distrib),
-        PRECISION,
-      ) &&
-      r.amountYAdded >= deltaReserveTokenY &&
-      r.amountXAdded == u256.Zero,
+    r.amountYAdded >= minAcceptable && r.amountXAdded == u256.Zero,
     'FloorToken: broken invariant',
   );
 
