@@ -111,6 +111,7 @@ export function _getAmountsInPair(
   floorId: u32,
   activeId: u32,
   roofId: u32,
+  token: Address = Context.callee(),
 ): GetAmountsInPairResult {
   let totalFloorInPair = u256.Zero;
   let totalTokenYInPair = u256.Zero;
@@ -128,39 +129,32 @@ export function _getAmountsInPair(
     const id = floorId + i;
 
     // Get the amount of shares owned by this contract, the reserves and the total supply of each bin
-    const share = _pair.balanceOf(Context.callee(), id);
+    const share = _pair.balanceOf(token, id);
     const binReserves = _pair.getBin(id);
     const totalShares = _pair.totalSupply(id);
 
     // The check for totalShares is implicit, as `totalShares >= share`
-    if (share > u256.Zero) {
-      // Calculate the amounts of tokens owned by this contract and that were added as liquidity
-      const reserveX =
-        binReserves.reserveX > u256.Zero
-          ? Math512Bits.mulDivRoundDown(
-              share,
-              binReserves.reserveX,
-              totalShares,
-            )
-          : u256.Zero;
-      const reserveY =
-        binReserves.reserveY > u256.Zero
-          ? Math512Bits.mulDivRoundDown(
-              share,
-              binReserves.reserveY,
-              totalShares,
-            )
-          : u256.Zero;
+    if (share.isZero()) continue;
 
-      // Update the total amounts
-      totalFloorInPair = SafeMath256.add(totalFloorInPair, reserveX);
-      totalTokenYInPair = SafeMath256.add(totalTokenYInPair, reserveY);
+    // Calculate the amounts of tokens owned by this contract and that were added as liquidity
+    const reserveX =
+      binReserves.reserveX > u256.Zero
+        ? Math512Bits.mulDivRoundDown(share, binReserves.reserveX, totalShares)
+        : u256.Zero;
+    const reserveY =
+      binReserves.reserveY > u256.Zero
+        ? Math512Bits.mulDivRoundDown(share, binReserves.reserveY, totalShares)
+        : u256.Zero;
+    // generateEvent('reserveY: ' + reserveY.toString());
 
-      // Update the arrays for the left side
-      if (id <= activeId) {
-        sharesLeftSide[i] = share;
-        reservesY[i] = reserveY;
-      }
+    // Update the total amounts
+    totalFloorInPair = SafeMath256.add(totalFloorInPair, reserveX);
+    totalTokenYInPair = SafeMath256.add(totalTokenYInPair, reserveY);
+
+    // Update the arrays for the left side
+    if (id <= activeId) {
+      sharesLeftSide[i] = share;
+      reservesY[i] = reserveY;
     }
   }
 

@@ -10,7 +10,12 @@ import {
 import { Address, Storage, call } from '@massalabs/massa-as-sdk';
 import { u256 } from 'as-bignum/assembly/integer/u256';
 import { Tuple } from '../libraries/Utils';
-import { FLOOR_ID, REBALANCE_PAUSED, ROOF_ID } from '../storage/FloorToken';
+import {
+  FLOOR_ID,
+  PAIR,
+  REBALANCE_PAUSED,
+  ROOF_ID,
+} from '../storage/FloorToken';
 
 export class IFloorToken {
   constructor(public _origin: Address) {}
@@ -24,8 +29,9 @@ export class IFloorToken {
   }
 
   pair(): IPair {
-    const res = call(this._origin, 'pair', NoArg, 0);
-    return new IPair(new Address(bytesToString(res)));
+    return new IPair(
+      new Address(bytesToString(Storage.getOf(this._origin, PAIR))),
+    );
   }
 
   tokenY(): IERC20 {

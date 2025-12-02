@@ -48,6 +48,8 @@ import {
   roofId,
   setStatus,
 } from './token-internal';
+import { IFloorToken } from '../../interfaces/IFloorToken';
+import { IMyFloorToken } from '../../interfaces/IMyFloorToken';
 
 export * from '@massalabs/sc-standards/assembly/contracts/utils/ownership';
 
@@ -140,10 +142,12 @@ export function tokensInPair(_: StaticArray<u8>): StaticArray<u8> {
 export function calculateNewFloorId(_: StaticArray<u8>): StaticArray<u8> {
   const res = _getAmountsInPair(floorId(), activeId(), roofId());
 
-  const _totalSupply = new IERC20(Context.callee()).totalSupply();
+  const token = new IMyFloorToken(Context.callee());
+  const _totalSupply = token.totalSupply();
+  const taxRecipientBalance = token.balanceOf(token.transferTax.taxRecipient());
   const floorInCirculation = SafeMath256.sub(
-    _totalSupply,
-    res.totalFloorInPair,
+    SafeMath256.sub(_totalSupply, res.totalFloorInPair),
+    taxRecipientBalance,
   );
 
   return u32ToBytes(
