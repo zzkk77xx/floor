@@ -197,7 +197,7 @@ export function _safeRebalance(
   const reserveFloorBefore = resBefore._0;
   const reserveTokenYBefore = resBefore._1;
 
-  // Burns the shares and send the tokenY to the pair as we will add all the tokenY to the new floor bin
+  // Transfer the LP shares to the pair (required before burning)
   const _pair = pair();
   _pair.safeBatchTransferFrom(
     Context.callee(),
@@ -206,11 +206,27 @@ export function _safeRebalance(
     shares,
     masToSend,
   );
-  _pair.burn(ids, shares, _pair._origin, masToSend);
+
+  // Get the tokenY balance of the floor token contract before burning
+  const tokenY = new IERC20(new Address(bytesToString(Storage.get(TOKEN_Y))));
+  const floorTokenYBalanceBefore = tokenY.balanceOf(Context.callee());
+
+  // Burn the LP shares and send underlying tokens to floor token contract (not pair!)
+  // This avoids the "self-transfer" error that occurs when floor tokens go pair -> pair
+  _pair.burn(ids, shares, Context.callee(), masToSend);
+
+  // Calculate how much tokenY was received from the burn
+  const floorTokenYBalanceAfter = tokenY.balanceOf(Context.callee());
+  const tokenYReceived = SafeMath256.sub(
+    floorTokenYBalanceAfter,
+    floorTokenYBalanceBefore,
+  );
+
+  // Transfer the received tokenY to the pair for the subsequent mint
+  tokenY.transfer(_pair._origin, tokenYReceived);
 
   // Get the current tokenY balance of the pair contract (minus the protocol fees)
   const tokenYProtocolFees = protocolFees()._1;
-  const tokenY = new IERC20(new Address(bytesToString(Storage.get(TOKEN_Y))));
   const tokenYBalanceSubProtocolFees = SafeMath256.sub(
     tokenY.balanceOf(_pair._origin),
     tokenYProtocolFees,
